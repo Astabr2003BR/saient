@@ -48,6 +48,9 @@ assert.match(kotlin, /MediaMetadataRetriever/);
 assert.match(kotlin, /TextToSpeech\.getMaxSpeechInputLength\(\)/);
 assert.match(kotlin, /cacheDir/);
 assert.match(kotlin, /shutdown\(\)/);
+assert.match(kotlin, /CompletableDeferred<Int>/, "TTS initialization must use an explicit completion signal");
+assert.match(kotlin, /initialization\.await\(\)/, "TTS initialization must await the callback result");
+assert.doesNotMatch(kotlin, /AtomicReference<TextToSpeech/, "TTS initialization must not depend on callback/reference ordering");
 assert.doesNotMatch(kotlin, /http:\/\//i);
 assert.doesNotMatch(kotlin, /https:\/\//i);
 
