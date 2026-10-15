@@ -41,7 +41,7 @@ for (const api of ["getOfflineVoices", "synthesizeSpeechSegment", "cancelSpeechS
 }
 assert.match(kotlin, /Name\("SaientVideoStudio"\)/);
 assert.match(kotlin, /!voice\.isNetworkConnectionRequired/);
-assert.match(kotlin, /Locale\.forLanguageTag\(localeTag\)/);
+assert.match(kotlin, /Locale\.forLanguageTag\((?:localeTag|normalized)\)/);
 assert.match(kotlin, /synthesizeToFile/);
 assert.match(kotlin, /UtteranceProgressListener/);
 assert.match(kotlin, /MediaMetadataRetriever/);
