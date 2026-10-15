@@ -1,0 +1,63 @@
+name: Apply PT-BR Localization
+
+on:
+  push:
+    branches:
+      - feat/ptbr-video-studio
+    paths:
+      - '.github/ptbr-localization-trigger'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  localize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Apply PT-BR source localization
+        run: node scripts/apply-ptbr-localization.mjs
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Verify PT-BR UI
+        run: npm run test:ptbr-ui
+
+      - name: Verify Video Studio contracts
+        run: |
+          npm run test:wan
+          npm run test:video-studio
+          npm run test:video-studio-native
+          npm run test:video-studio-export
+          npm run test:video-studio-storage
+          npm run test:video-studio-pipeline
+          npm run test:video-studio-cancel
+          npm run test:video-studio-ui
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Commit localization
+        run: |
+          set -Eeuo pipefail
+          if git diff --quiet; then
+            echo "No localization changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app components
+          git commit -m "fix: complete PT-BR interface localization"
+          git push origin HEAD:feat/ptbr-video-studio
