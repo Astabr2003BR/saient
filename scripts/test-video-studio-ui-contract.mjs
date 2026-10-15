@@ -38,6 +38,46 @@ assert.match(source, /Dublagem PT-BR/);
 assert.match(source, /Legendas/);
 assert.match(source, /Dublar e exportar/);
 assert.match(source, /Nenhuma voz PT-BR offline/);
-assert.match(source, /Video final/);
+assert.match(source, /Vídeo final/);
+
+const forbiddenEnglishUi = [
+  "Add the Wan video pack",
+  "Download the quantized Wan2.1",
+  "offline after setup",
+  "Downloading ",
+  "Download Wan pack",
+  "Connecting to Saient Pi",
+  "Cancel download",
+  "model details",
+  "mobile pack",
+  "Active",
+  "Inactive",
+  "Activate",
+  "Remove Wan model?",
+  "Generated videos stay on the phone.",
+  "Motion prompt",
+  "Avoid (optional)",
+  "Steps",
+  "Length at 8 fps",
+  "Start with 5 frames at Standard",
+  "Seed",
+  "Random",
+  "Processing ",
+  "Loading Wan",
+  "Chat is unloaded until the native video process exits.",
+  "Cancel generation",
+  "Generate on phone",
+  "Checking",
+  "Ready",
+  "Model needed",
+  ">Video<",
+  " frames · ",
+  " steps · ",
+  "Video final",
+];
+
+for (const text of forbiddenEnglishUi) {
+  assert.equal(source.includes(text), false, `video screen still contains English UI text: ${text}`);
+}
 
 console.log("video studio PT-BR dubbing UI contract passed");
