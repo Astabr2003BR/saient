@@ -33,28 +33,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="models"
         options={{
-          title: "Models",
+          title: "Modelos",
           tabBarIcon: ({ color, size }) => <Ionicons name="cube" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
-          title: "Create",
+          title: "Criar",
           tabBarIcon: ({ color, size }) => <Ionicons name="images" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="video"
         options={{
-          title: "Video",
+          title: "Vídeo",
           tabBarIcon: ({ color, size }) => <Ionicons name="videocam" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
+          title: "Configurações",
           tabBarIcon: ({ color, size }) => <Ionicons name="settings-sharp" size={size} color={color} />,
         }}
       />
