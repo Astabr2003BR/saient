@@ -1,6 +1,9 @@
 {
   "platforms": ["android"],
   "android": {
-    "modules": ["expo.modules.saientvideostudio.SaientVideoStudioModule"]
+    "modules": [
+      "expo.modules.saientvideostudio.SaientVideoStudioModule",
+      "expo.modules.saientvideostudio.SaientVideoStudioStorageModule"
+    ]
   }
 }
