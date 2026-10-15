@@ -133,7 +133,7 @@ function streamReal(messages: ChatMsg[], onToken: (t: string) => void, signal?: 
       visible.flush();
       finish();
     };
-    xhr.onerror = () => reject(new Error("Quartz network error"));
+    xhr.onerror = () => reject(new Error("Erro de rede do Quartz"));
     if (signal) {
       if (signal.aborted) { xhr.abort(); finish(); return; }
       signal.addEventListener("abort", () => { xhr.abort(); finish(); });
@@ -146,8 +146,8 @@ function streamReal(messages: ChatMsg[], onToken: (t: string) => void, signal?: 
 // battery). Kept deliberately generic so it's accurate whichever the cause is. ────────────────
 async function streamMock(_messages: ChatMsg[], onToken: (t: string) => void, signal?: AbortSignal) {
   const reply =
-    "The on-device engine isn’t running right now. Open the Models tab to download a model, " +
-    "or tap Load there if you unloaded it to save battery. Everything runs offline on your phone — no cloud, no API keys.";
+    "O motor local não está em execução agora. Abra a aba Modelos para baixar um modelo, " +
+    "ou toque em Carregar caso tenha descarregado o modelo para economizar bateria. Tudo funciona localmente no seu celular — sem nuvem e sem chaves de API.";
   for (const word of reply.split(/(\s+)/)) {
     if (signal?.aborted) return;
     onToken(word);

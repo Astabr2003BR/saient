@@ -26,13 +26,13 @@ import { listLocal } from "@/lib/models";
 import { quartzChat, type ChatMsg } from "@/lib/quartz";
 import { C } from "@/lib/theme";
 
-const SYSTEM = "You are Saient, a helpful AI assistant running entirely on this phone. Be concise and friendly.\n/no_think";
+const SYSTEM = "Você é o Saient, um assistente de IA útil que roda inteiramente neste celular. Responda sempre em português do Brasil, de forma clara e concisa.\n/no_think";
 const BUILD_SYSTEM =
-  "You are Saient Build, an on-device web prototyper. When the user describes a page, screen, UI, or " +
-  "component, reply with ONE self-contained HTML document inside a single ```html code block: put CSS in " +
-  "an inline <style> tag and any JS in an inline <script> tag, and use NO external files, CDNs, fonts, or " +
-  "image URLs (use inline SVG or CSS instead). Make it clean and modern. Add at most one short sentence " +
-  "before the code block, and nothing after it.\n/no_think";
+  "Você é o Saient Build, um criador local de protótipos web. Responda sempre em português do Brasil. Quando o usuário descrever uma página, tela, interface ou " +
+  "componente, responda com UM documento HTML autocontido dentro de um único bloco ```html: coloque o CSS em " +
+  "uma tag <style> interna e qualquer JS em uma tag <script> interna; NÃO use arquivos externos, CDNs, fontes ou " +
+  "URLs de imagens (use SVG inline ou CSS). Faça uma interface limpa e moderna. Adicione no máximo uma frase curta " +
+  "antes do bloco de código e nada depois dele.\n/no_think";
 const WIZARD_SEEN_KEY = "saient.setup-wizard-seen.v1";
 
 export default function ChatScreen() {
@@ -213,7 +213,7 @@ export default function ChatScreen() {
       [
         { text: "Cancelar", style: "cancel" },
         {
-          text: "Delete",
+          text: "Excluir",
           style: "destructive",
           onPress: () => {
             void (async () => {
@@ -238,7 +238,7 @@ export default function ChatScreen() {
       [
         { text: "Cancelar", style: "cancel" },
         {
-          text: "Delete",
+          text: "Excluir",
           style: "destructive",
           onPress: () => {
             void deleteSavedChat(chat.id).then(() => {
