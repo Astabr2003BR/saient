@@ -20,6 +20,7 @@
     "test:video-studio-pipeline": "node --no-warnings --experimental-strip-types scripts/test-video-studio-pipeline.mjs",
     "test:video-studio-cancel": "node --no-warnings --experimental-strip-types scripts/test-video-studio-cancel.mjs",
     "test:video-studio-ui": "node scripts/test-video-studio-ui-contract.mjs",
+    "test:ptbr-ui": "node scripts/test-ptbr-ui-contract.mjs",
     "android:release": "bash scripts/build-android-release.sh",
     "android:signing:init": "bash scripts/init-android-signing.sh"
   },
