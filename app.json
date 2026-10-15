@@ -2,7 +2,7 @@
   "expo": {
     "name": "Saient",
     "slug": "saient-mobile",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "saient",
@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "co.uk.staticplay.app",
-      "versionCode": 11,
+      "versionCode": 12,
       "edgeToEdgeEnabled": true,
       "allowBackup": false,
       "permissions": [
