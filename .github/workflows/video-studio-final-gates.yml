@@ -44,8 +44,11 @@ jobs:
       - name: Cancellation contract
         run: npm run test:video-studio-cancel
 
-      - name: PT-BR UI contract
+      - name: PT-BR dubbing UI contract
         run: npm run test:video-studio-ui
+
+      - name: Full PT-BR interface contract
+        run: npm run test:ptbr-ui
 
       - name: Existing Wan contract
         run: npm run test:wan
