@@ -33,7 +33,9 @@ assert.match(kotlin, /File\(context\(\)\.cacheDir, "video-studio\/tts"\)/);
 assert.match(kotlin, /canonicalFile/);
 assert.match(kotlin, /copyTo\(/);
 assert.match(kotlin, /source\.delete\(\)/);
-assert.match(kotlin, /parentFile\?\.delete\(\)/);
+assert.match(kotlin, /val parent = file\.parentFile\?\.canonicalFile/);
+assert.match(kotlin, /parent\.parentFile\?\.canonicalFile == root/);
+assert.match(kotlin, /parent\.delete\(\)/);
 assert.doesNotMatch(kotlin, /READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE/);
 
 console.log("persistent video studio storage contract passed");
