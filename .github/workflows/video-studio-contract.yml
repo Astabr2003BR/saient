@@ -11,11 +11,13 @@ on:
       - 'components/ChatHistoryModal.tsx'
       - 'components/HtmlPreview.tsx'
       - 'components/SetupWizard.tsx'
+      - 'lib/quartz.ts'
       - 'lib/video-studio/**'
       - 'modules/saient-video-studio/**'
       - 'modules/saient-diffusion/**'
       - 'plugins/withTextToSpeechQueries.js'
       - 'scripts/apply-ptbr-localization.mjs'
+      - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-video-studio.mjs'
       - 'scripts/test-video-studio-native-contract.mjs'
@@ -81,18 +83,21 @@ jobs:
       - name: Test full PT-BR UI localization contract
         run: npm run test:ptbr-ui
 
+      - name: Test PT-BR chat runtime contract
+        run: node scripts/test-chat-ptbr-contract.mjs
+
       - name: Typecheck localized sources
         run: npm run typecheck
 
       - name: Commit verified PT-BR localization
         run: |
           set -Eeuo pipefail
-          if git diff --quiet -- app components; then
+          if git diff --quiet -- app components lib; then
             echo "No localization changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app components
-          git commit -m "fix: complete PT-BR interface localization"
+          git add app components lib
+          git commit -m "fix: complete PT-BR runtime localization"
           git push origin HEAD:feat/ptbr-video-studio
