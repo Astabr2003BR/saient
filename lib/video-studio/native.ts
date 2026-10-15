@@ -1,4 +1,6 @@
 import {
+  cancelSpeechSynthesis,
+  cancelVideoExport,
   cleanupSynthesizedSegments,
   exportDubbedVideo,
   promoteVideoStudioExport,
@@ -34,5 +36,7 @@ export function runNativeVideoStudioPostProcess(
     exportDubbedVideo,
     promoteVideoStudioExport,
     cleanupSynthesizedSegments,
+    cancelSpeechSynthesis,
+    cancelVideoExport,
   });
 }
