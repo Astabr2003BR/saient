@@ -13,6 +13,7 @@
     "doctor": "expo-doctor",
     "test:models": "node --no-warnings --experimental-strip-types scripts/test-model-support.mjs",
     "test:wan": "node scripts/test-wan-contract.mjs",
+    "test:wan-performance": "node scripts/test-wan-performance-contract.mjs",
     "test:video-studio": "node --no-warnings --experimental-strip-types scripts/test-video-studio.mjs",
     "test:video-studio-native": "node scripts/test-video-studio-native-contract.mjs",
     "test:video-studio-export": "node scripts/test-video-studio-export-contract.mjs",
