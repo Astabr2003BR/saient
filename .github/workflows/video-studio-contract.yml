@@ -11,6 +11,7 @@ on:
       - 'scripts/test-video-studio.mjs'
       - 'scripts/test-video-studio-native-contract.mjs'
       - 'scripts/test-video-studio-export-contract.mjs'
+      - 'scripts/test-video-studio-storage-contract.mjs'
       - 'app.json'
       - 'package.json'
       - '.github/workflows/video-studio-contract.yml'
@@ -37,3 +38,6 @@ jobs:
 
       - name: Test dubbed MP4 export native contract
         run: npm run test:video-studio-export
+
+      - name: Test persistent storage and TTS cleanup contract
+        run: npm run test:video-studio-storage
