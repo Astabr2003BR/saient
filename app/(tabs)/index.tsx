@@ -87,11 +87,11 @@ export default function ChatScreen() {
   const confirmSend = (name: string, message: string) =>
     new Promise<boolean>((resolve) => {
       Alert.alert(
-        `Send to ${name}?`,
+        `Enviar para ${name}?`,
         message,
         [
-          { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-          { text: "Send", onPress: () => resolve(true) },
+          { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
+          { text: "Enviar", onPress: () => resolve(true) },
         ],
         { cancelable: true, onDismiss: () => resolve(false) },
       );
@@ -127,7 +127,7 @@ export default function ChatScreen() {
           scrollToEnd();
         }, confirmSend, abort.current.signal);
       } catch (e) {
-        appendMsg({ role: "assistant", content: `Error: ${String(e)}` });
+        appendMsg({ role: "assistant", content: `Erro: ${String(e)}` });
       } finally {
         setBusy(false);
       }
@@ -149,7 +149,7 @@ export default function ChatScreen() {
         setMessages((cur) => cur.map((m) => (m.id === aiMsg.id ? { ...m, content: m.content + tok } : m)));
       }, abort.current.signal);
     } catch (e) {
-      setMessages((cur) => cur.map((m) => (m.id === aiMsg.id ? { ...m, content: m.content || `Error: ${String(e)}` } : m)));
+      setMessages((cur) => cur.map((m) => (m.id === aiMsg.id ? { ...m, content: m.content || `Erro: ${String(e)}` } : m)));
     } finally {
       setMessages((cur) => cur.map((m) => (m.id === aiMsg.id ? { ...m, streaming: false } : m)));
       setBusy(false);
@@ -174,7 +174,7 @@ export default function ChatScreen() {
       setSavedChats(await listSavedChats());
       setHistoryOpen(true);
     } catch (error) {
-      Alert.alert("Saved chats unavailable", String(error));
+      Alert.alert("Conversas salvas indisponíveis", String(error));
     }
   }
 
@@ -186,9 +186,9 @@ export default function ChatScreen() {
       const saved = await saveChat(messages, existing);
       setActiveChatId(saved.id);
       setSavedChats((current) => [saved, ...current.filter((chat) => chat.id !== saved.id)]);
-      Alert.alert("Chat saved", `“${saved.title}” is saved on this phone.`);
+      Alert.alert("Conversa salva", `“${saved.title}” foi salva neste celular.`);
     } catch (error) {
-      Alert.alert("Could not save chat", String(error));
+      Alert.alert("Não foi possível salvar a conversa", String(error));
     } finally {
       setSaving(false);
     }
@@ -206,12 +206,12 @@ export default function ChatScreen() {
     if (messages.length === 0 || busy) return;
     const saved = savedChats.find((chat) => chat.id === activeChatId);
     Alert.alert(
-      saved ? "Delete saved chat?" : "Clear this chat?",
+      saved ? "Excluir conversa salva?" : "Limpar esta conversa?",
       saved
-        ? `“${saved.title}” will be permanently removed from this phone.`
-        : "This unsaved conversation will be permanently cleared.",
+        ? `“${saved.title}” será removida permanentemente deste celular.`
+        : "Esta conversa não salva será apagada permanentemente.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Cancelar", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
@@ -222,7 +222,7 @@ export default function ChatScreen() {
                 setSavedChats((current) => current.filter((chat) => chat.id !== saved?.id));
                 resetChat();
               } catch (error) {
-                Alert.alert("Could not delete chat", String(error));
+                Alert.alert("Não foi possível excluir a conversa", String(error));
               }
             })();
           },
@@ -233,10 +233,10 @@ export default function ChatScreen() {
 
   function confirmDeleteSaved(chat: SavedChat) {
     Alert.alert(
-      "Delete saved chat?",
-      `“${chat.title}” will be permanently removed from this phone.`,
+      "Excluir conversa salva?",
+      `“${chat.title}” será removida permanentemente deste celular.`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Cancelar", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
@@ -244,7 +244,7 @@ export default function ChatScreen() {
             void deleteSavedChat(chat.id).then(() => {
               setSavedChats((current) => current.filter((saved) => saved.id !== chat.id));
               if (activeChatId === chat.id) resetChat();
-            }).catch((error) => Alert.alert("Could not delete chat", String(error)));
+            }).catch((error) => Alert.alert("Não foi possível excluir a conversa", String(error)));
           },
         },
       ],
@@ -258,11 +258,11 @@ export default function ChatScreen() {
       return;
     }
     Alert.alert(
-      "Start a new chat?",
-      activeChatId ? "Your saved chat will stay in history." : "This unsaved chat will be cleared.",
+      "Iniciar uma nova conversa?",
+      activeChatId ? "Sua conversa salva continuará no histórico." : "Esta conversa não salva será apagada.",
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "New chat", onPress: resetChat },
+        { text: "Cancelar", style: "cancel" },
+        { text: "Nova conversa", onPress: resetChat },
       ],
     );
   }
@@ -280,7 +280,7 @@ export default function ChatScreen() {
               style={[styles.headerButton, busy && styles.disabled]}
               disabled={busy}
               accessibilityRole="button"
-              accessibilityLabel="Open saved chats"
+              accessibilityLabel="Abrir conversas salvas"
             >
               <Ionicons name="time-outline" size={17} color={C.text2} />
             </Pressable>
@@ -289,7 +289,7 @@ export default function ChatScreen() {
               style={[styles.headerButton, (busy || saving || messages.length === 0) && styles.disabled]}
               disabled={busy || saving || messages.length === 0}
               accessibilityRole="button"
-              accessibilityLabel="Save chat"
+              accessibilityLabel="Salvar conversa"
             >
               <Ionicons name={saving ? "hourglass-outline" : "bookmark-outline"} size={17} color={C.text2} />
             </Pressable>
@@ -298,7 +298,7 @@ export default function ChatScreen() {
               style={[styles.headerButton, (busy || messages.length === 0) && styles.disabled]}
               disabled={busy || messages.length === 0}
               accessibilityRole="button"
-              accessibilityLabel="Delete current chat"
+              accessibilityLabel="Excluir conversa atual"
             >
               <Ionicons name="trash-outline" size={17} color={messages.length > 0 ? C.red : C.text3} />
             </Pressable>
@@ -307,20 +307,20 @@ export default function ChatScreen() {
               style={[styles.agentBtn, build && styles.agentOn]}
               accessibilityRole="switch"
               accessibilityState={{ checked: build }}
-              accessibilityLabel={`Build mode ${build ? "on" : "off"}`}
+              accessibilityLabel={`Modo construtor ${build ? "ativado" : "desativado"}`}
             >
               <Ionicons name="hammer" size={13} color={build ? C.accent : C.text3} />
-              <Text style={[styles.agentTxt, { color: build ? C.accent : C.text3 }]}>Build</Text>
+              <Text style={[styles.agentTxt, { color: build ? C.accent : C.text3 }]}>Construtor</Text>
             </Pressable>
             <Pressable
               onPress={() => { setAgent((a) => !a); setBuild(false); }}
               style={[styles.agentBtn, agent && styles.agentOn]}
               accessibilityRole="switch"
               accessibilityState={{ checked: agent }}
-              accessibilityLabel={`Agent mode ${agent ? "on" : "off"}`}
+              accessibilityLabel={`Modo agente ${agent ? "ativado" : "desativado"}`}
             >
               <Ionicons name="construct" size={13} color={agent ? C.accent : C.text3} />
-              <Text style={[styles.agentTxt, { color: agent ? C.accent : C.text3 }]}>Agent</Text>
+              <Text style={[styles.agentTxt, { color: agent ? C.accent : C.text3 }]}>Agente</Text>
             </Pressable>
           </View>
         </View>
@@ -328,8 +328,8 @@ export default function ChatScreen() {
         {messages.length === 0 ? (
           <View style={styles.empty}>
             <Mascot size={34} />
-            <Text style={styles.emptyTitle}>Your AI, on your phone.</Text>
-            <Text style={styles.emptySub}>Load an on-device model to get started.</Text>
+            <Text style={styles.emptyTitle}>Sua IA, no seu celular.</Text>
+            <Text style={styles.emptySub}>Carregue um modelo local para começar.</Text>
           </View>
         ) : (
           <FlatList
@@ -348,10 +348,10 @@ export default function ChatScreen() {
           <TextInput
             style={styles.input}
             placeholder={build
-              ? "Describe a page or UI to build…"
+              ? "Descreva uma página ou interface para criar…"
               : agent
-                ? "Ask me to text or call someone…"
-                : "Message Saient…"}
+                ? "Peça para eu preparar uma mensagem ou ligação…"
+                : "Mensagem para o Saient…"}
             placeholderTextColor={C.text3}
             value={input}
             onChangeText={setInput}

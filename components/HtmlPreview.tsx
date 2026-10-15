@@ -15,9 +15,9 @@ export function HtmlPreview({ html, onClose }: { html: string | null; onClose: (
       <View style={[styles.root, { paddingTop: insets.top }]}>
         <View style={styles.bar}>
           <Ionicons name="eye-outline" size={18} color={C.accent} />
-          <Text style={styles.title}>Preview</Text>
+          <Text style={styles.title}>Prévia</Text>
           <View style={{ flex: 1 }} />
-          <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close preview">
+          <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Fechar prévia">
             <Ionicons name="close" size={26} color={C.text} />
           </Pressable>
         </View>

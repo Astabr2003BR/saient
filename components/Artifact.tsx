@@ -19,18 +19,18 @@ export function Artifact({ lang, code, onPreview }: { lang: string; code: string
     <View style={styles.card}>
       <View style={styles.head}>
         <Ionicons name="code-slash" size={14} color={C.accent} />
-        <Text style={styles.lang}>{lang || "code"}</Text>
-        <Text style={styles.meta}>· {lineCount} {lineCount === 1 ? "line" : "lines"}</Text>
+        <Text style={styles.lang}>{lang || "código"}</Text>
+        <Text style={styles.meta}>· {lineCount} {lineCount === 1 ? "linha" : "linhas"}</Text>
         <View style={{ flex: 1 }} />
         {onPreview && (
-          <Pressable onPress={onPreview} style={styles.copyBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel="Preview">
+          <Pressable onPress={onPreview} style={styles.copyBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel="Prévia">
             <Ionicons name="eye-outline" size={14} color={C.accent} />
-            <Text style={[styles.copyTxt, { color: C.accent }]}>Preview</Text>
+            <Text style={[styles.copyTxt, { color: C.accent }]}>Prévia</Text>
           </Pressable>
         )}
         <Pressable onPress={copy} style={styles.copyBtn} hitSlop={8}>
           <Ionicons name={copied ? "checkmark" : "copy-outline"} size={14} color={copied ? C.green : C.text2} />
-          <Text style={[styles.copyTxt, copied && { color: C.green }]}>{copied ? "Copied" : "Copy"}</Text>
+          <Text style={[styles.copyTxt, copied && { color: C.green }]}>{copied ? "Copiado" : "Copiar"}</Text>
         </Pressable>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.bodyInner}>

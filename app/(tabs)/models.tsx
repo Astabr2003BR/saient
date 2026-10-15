@@ -156,10 +156,10 @@ export default function ModelsScreen() {
     setImageProgress(null);
     try {
       setImageStatus(await downloadDiffusionModel());
-      Alert.alert("Image model ready", "Quartz verified and activated the SDXL FP16 pack.");
+      Alert.alert("Modelo de imagem pronto", "O Quartz verificou e ativou o pacote SDXL FP16.");
     } catch (error) {
       if (!String(error).toLocaleLowerCase().includes("cancel")) {
-        Alert.alert("Could not download image model", String(error));
+        Alert.alert("Não foi possível baixar o modelo de imagem", String(error));
       }
       await refreshImage();
     } finally {
@@ -182,7 +182,7 @@ export default function ModelsScreen() {
     try {
       setImageStatus(await setDiffusionModelActive(nextActive));
     } catch (error) {
-      Alert.alert("Could not change image model", String(error));
+      Alert.alert("Não foi possível alterar o modelo de imagem", String(error));
     } finally {
       setImageStateBusy(false);
     }
@@ -192,7 +192,7 @@ export default function ModelsScreen() {
       await setActive(fileName);
       await refresh();
     } catch (error) {
-      Alert.alert("Could not use model", String(error));
+      Alert.alert("Não foi possível usar o modelo", String(error));
     }
   }, [refresh]);
   const onDeleteFile = useCallback(async (fileName: string) => {
@@ -200,7 +200,7 @@ export default function ModelsScreen() {
       await deleteModel(fileName);
       await refresh();
     } catch (error) {
-      Alert.alert("Could not delete model", String(error));
+      Alert.alert("Não foi possível excluir o modelo", String(error));
     }
   }, [refresh]);
   const onUse = useCallback(async (m: ModelEntry) => { await onUseFile(m.file); }, [onUseFile]);
@@ -216,20 +216,20 @@ export default function ModelsScreen() {
       if (!result) return;
       setDownloadCandidates(result.models);
       const details = [
-        `${result.models.length} GGUF ${result.models.length === 1 ? "model" : "models"} found`,
-        result.rejectedFiles > 0 ? `${result.rejectedFiles} invalid or incomplete skipped` : "",
+        `${result.models.length} ${result.models.length === 1 ? "modelo GGUF encontrado" : "modelos GGUF encontrados"}`,
+        result.rejectedFiles > 0 ? `${result.rejectedFiles} arquivo(s) inválido(s) ou incompleto(s) ignorado(s)` : "",
       ].filter(Boolean).join(" · ");
       setSearchSummary(details);
       if (result.models.length === 0) {
         Alert.alert(
-          "No usable GGUF models found",
+          "Nenhum modelo GGUF utilizável encontrado",
           result.rejectedFiles > 0
-            ? `Saient skipped ${result.rejectedFiles} incomplete or invalid .gguf ${result.rejectedFiles === 1 ? "file" : "files"}.`
-            : "Put a complete .gguf model in Downloads, then search again.",
+            ? `O Saient ignorou ${result.rejectedFiles} arquivo(s) .gguf incompleto(s) ou inválido(s).`
+            : "Coloque um modelo .gguf completo em Downloads e pesquise novamente.",
         );
       }
     } catch (error) {
-      Alert.alert("Could not search Downloads", String(error));
+      Alert.alert("Não foi possível pesquisar em Downloads", String(error));
     } finally {
       setSearching(false);
     }
@@ -246,14 +246,14 @@ export default function ModelsScreen() {
       setSearchSummary("");
 
       if (!currentActive) {
-        Alert.alert("Model imported", `“${imported.fileName}” is now active in Quartz.`);
+        Alert.alert("Modelo importado", `“${imported.fileName}” agora está ativo no Quartz.`);
       } else {
         Alert.alert(
-          "Model imported",
-          `“${imported.fileName}” was copied into Saient. Use it now?`,
+          "Modelo importado",
+          `“${imported.fileName}” foi copiado para o Saient. Usar agora?`,
           [
-            { text: "Later", style: "cancel" },
-            { text: "Use model", onPress: () => { void onUseFile(imported.fileName); } },
+            { text: "Depois", style: "cancel" },
+            { text: "Usar modelo", onPress: () => { void onUseFile(imported.fileName); } },
           ],
         );
       }
@@ -261,7 +261,7 @@ export default function ModelsScreen() {
       await discardDownloadedModelCandidates([candidate]);
       setDownloadCandidates((current) => current.filter((item) => item.sourceUri !== candidate.sourceUri));
       setSearchSummary("");
-      Alert.alert("Could not import model", String(error));
+      Alert.alert("Não foi possível importar o modelo", String(error));
     } finally {
       setImportingUri(null);
     }
@@ -272,12 +272,12 @@ export default function ModelsScreen() {
     try {
       const profile = await getDeviceProfile();
       if (!profile) {
-        Alert.alert("Device test unavailable", "This build does not include the local device profile module.");
+        Alert.alert("Teste do aparelho indisponível", "Este build não inclui o módulo local de perfil do aparelho.");
         return;
       }
       setDeviceProfile(profile);
     } catch (error) {
-      Alert.alert("Could not test this device", String(error));
+      Alert.alert("Não foi possível testar este aparelho", String(error));
     } finally {
       setTestingDevice(false);
     }
@@ -290,7 +290,7 @@ export default function ModelsScreen() {
       setPaused(true);
       setEngineUp(false); // reflect immediately; the engine goes down within a supervisor poll
     } catch (error) {
-      Alert.alert("Could not unload the model", String(error));
+      Alert.alert("Não foi possível descarregar o modelo", String(error));
     } finally {
       setPauseBusy(false);
     }
@@ -302,7 +302,7 @@ export default function ModelsScreen() {
       await setEnginePaused(false);
       setPaused(false); // the supervisor reloads the engine within a poll cycle; banner catches up
     } catch (error) {
-      Alert.alert("Could not load the model", String(error));
+      Alert.alert("Não foi possível carregar o modelo", String(error));
     } finally {
       setPauseBusy(false);
     }
@@ -319,13 +319,13 @@ export default function ModelsScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 8, paddingBottom: 40 }}>
-      <Text style={styles.h1}>Models</Text>
-      <Text style={styles.sub}>Download a model to run entirely on this phone. Nothing leaves your device.</Text>
+      <Text style={styles.h1}>Modelos</Text>
+      <Text style={styles.sub}>Baixe um modelo para executar totalmente neste celular. Nada sai do aparelho.</Text>
 
       <View style={styles.quartzBanner} accessibilityRole="summary">
         <Ionicons name="hardware-chip" size={19} color={C.accent} />
         <Text style={styles.quartzBannerText}>
-          Native image generation through Quartz — Saient’s own Vulkan inference runtime. No cloud. No ONNX.
+          Geração de imagem local pelo Quartz — motor Vulkan do Saient. Sem nuvem e sem ONNX.
         </Text>
       </View>
 
@@ -337,12 +337,12 @@ export default function ModelsScreen() {
         />
         <Text style={[styles.engineText, { flex: 1 }]}>
           {paused
-            ? "Engine off to save battery"
+            ? "Motor desligado para economizar bateria"
             : engineUp === null
-              ? "Checking Quartz engine…"
+              ? "Verificando motor Quartz…"
               : engineUp
-                ? "Quartz engine ready"
-                : "No model loaded yet — download one below"}
+                ? "Motor Quartz pronto"
+                : "Nenhum modelo carregado — baixe um abaixo"}
         </Text>
         {hasModel && paused ? (
           <Pressable
@@ -350,10 +350,10 @@ export default function ModelsScreen() {
             onPress={() => { void onResume(); }}
             disabled={pauseBusy}
             accessibilityRole="button"
-            accessibilityLabel="Load model"
+            accessibilityLabel="Carregar modelo"
           >
             <Ionicons name="play" size={13} color={C.accent} />
-            <Text style={styles.engineBtnText}>Load</Text>
+            <Text style={styles.engineBtnText}>Carregar</Text>
           </Pressable>
         ) : hasModel && engineUp ? (
           <Pressable
@@ -361,18 +361,18 @@ export default function ModelsScreen() {
             onPress={() => { void onUnload(); }}
             disabled={pauseBusy}
             accessibilityRole="button"
-            accessibilityLabel="Unload model to save battery"
+            accessibilityLabel="Descarregar modelo para economizar bateria"
           >
             <Ionicons name="power" size={13} color={C.text2} />
-            <Text style={[styles.engineBtnText, { color: C.text2 }]}>Unload</Text>
+            <Text style={[styles.engineBtnText, { color: C.text2 }]}>Descarregar</Text>
           </Pressable>
         ) : null}
       </View>
       {paused && (
-        <Text style={styles.pausedHint}>Model unloaded to free memory and battery. Tap Load to chat again.</Text>
+        <Text style={styles.pausedHint}>Modelo descarregado para liberar memória e bateria. Toque em Carregar para conversar novamente.</Text>
       )}
 
-      <Text style={styles.sectionTitle}>Curated models</Text>
+      <Text style={styles.sectionTitle}>Modelos selecionados</Text>
       {catalog.map((m) => {
         const downloaded = local[m.file] != null;
         const isActive = active === m.file;
@@ -383,25 +383,25 @@ export default function ModelsScreen() {
             <View style={styles.cardTop}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardName}>{m.name}</Text>
-                <Text style={styles.cardMeta}>{m.params} · {m.quant} · {fmtBytes(m.sizeBytes)} · {m.tier}</Text>
-                {!!m.desc && <Text style={styles.cardDesc}>{m.desc}</Text>}
+                <Text style={styles.cardMeta}>{m.params} · {m.quant} · {fmtBytes(m.sizeBytes)} · {m.tier === "Tiny" ? "Pequeno" : m.tier === "Medium" ? "Médio" : "Grande"}</Text>
+                <Text style={styles.cardDesc}>{m.id === "qwen3-1.7b-q4km" ? "Modelo local versátil para conversas e tarefas de agente." : "Modelo local para uso no aparelho."}</Text>
                 <Text style={styles.license}>{m.license}</Text>
               </View>
               {!downloading && !downloaded && (
                 <Pressable style={styles.action} onPress={() => onDownload(m)}>
                   <Ionicons name="download-outline" size={18} color={C.accent} />
-                  <Text style={styles.actionText}>Get</Text>
+                  <Text style={styles.actionText}>Baixar</Text>
                 </Pressable>
               )}
               {!downloading && downloaded && !isActive && (
                 <Pressable style={styles.action} onPress={() => onUse(m)}>
-                  <Text style={styles.actionText}>Use</Text>
+                  <Text style={styles.actionText}>Usar</Text>
                 </Pressable>
               )}
               {!downloading && downloaded && isActive && (
                 <View style={[styles.action, styles.activeChip]}>
                   <Ionicons name="checkmark-circle" size={16} color={C.green} />
-                  <Text style={[styles.actionText, { color: C.green }]}>Active</Text>
+                  <Text style={[styles.actionText, { color: C.green }]}>Ativo</Text>
                 </View>
               )}
               {downloading && (
@@ -423,14 +423,14 @@ export default function ModelsScreen() {
             {downloaded && !downloading && (
               <Pressable style={styles.delete} onPress={() => onDelete(m)} hitSlop={8}>
                 <Ionicons name="trash-outline" size={14} color={C.text3} />
-                <Text style={styles.deleteText}>Delete</Text>
+                <Text style={styles.deleteText}>Excluir</Text>
               </Pressable>
             )}
           </View>
         );
       })}
 
-      <Text style={styles.sectionTitle}>Image models</Text>
+      <Text style={styles.sectionTitle}>Modelos de imagem</Text>
       <View style={[styles.card, imageStatus?.active && { borderColor: C.green }]}>
         <View style={styles.cardTop}>
           <View style={{ flex: 1 }}>
@@ -438,7 +438,7 @@ export default function ModelsScreen() {
             <Text style={styles.cardMeta}>
               {imageStatus?.valid && imageStatus.modelBytes ? fmtBytes(imageStatus.modelBytes) : "6.94 GB"} · FP16 · Vulkan
             </Text>
-            <Text style={styles.cardDesc}>Native 1024×1024 SDXL generation. Quartz loads it only while generating.</Text>
+            <Text style={styles.cardDesc}>Geração SDXL 1024×1024 local. O Quartz carrega o modelo apenas durante a geração.</Text>
             <Text style={styles.license}>SDXL OpenRAIL++ · FP16-fix VAE MIT</Text>
           </View>
           {!imageDownloading && !imageStatus?.valid && (
@@ -447,10 +447,10 @@ export default function ModelsScreen() {
               onPress={() => { void onDownloadImage(); }}
               disabled={imageChecking || !imageStatus?.available}
               accessibilityRole="button"
-              accessibilityLabel="Download Saient SDXL image model"
+              accessibilityLabel="Baixar modelo de imagem Saient SDXL"
             >
               <Ionicons name="download-outline" size={18} color={C.accent} />
-              <Text style={styles.actionText}>{imageChecking ? "Checking" : "Get"}</Text>
+              <Text style={styles.actionText}>{imageChecking ? "Verificando" : "Baixar"}</Text>
             </Pressable>
           )}
           {!imageDownloading && imageStatus?.valid && !imageStatus.active && (
@@ -459,16 +459,16 @@ export default function ModelsScreen() {
               onPress={() => { void onSetImageActive(true); }}
               disabled={imageStateBusy}
               accessibilityRole="button"
-              accessibilityLabel="Activate SDXL image model"
+              accessibilityLabel="Ativar modelo de imagem SDXL"
             >
               <Ionicons name="play" size={16} color={C.accent} />
-              <Text style={styles.actionText}>Activate</Text>
+              <Text style={styles.actionText}>Ativar</Text>
             </Pressable>
           )}
           {!imageDownloading && imageStatus?.valid && imageStatus.active && (
             <View style={[styles.action, styles.activeChip]}>
               <Ionicons name="checkmark-circle" size={16} color={C.green} />
-              <Text style={[styles.actionText, { color: C.green }]}>Active</Text>
+              <Text style={[styles.actionText, { color: C.green }]}>Ativo</Text>
             </View>
           )}
           {imageDownloading && (
@@ -477,7 +477,7 @@ export default function ModelsScreen() {
               onPress={() => { void onCancelImageDownload(); }}
               disabled={imageCancelling}
               accessibilityRole="button"
-              accessibilityLabel="Cancel SDXL model download"
+              accessibilityLabel="Cancelar download do modelo SDXL"
             >
               <Ionicons name="close" size={18} color={C.text2} />
             </Pressable>
@@ -500,23 +500,23 @@ export default function ModelsScreen() {
             disabled={imageStateBusy}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Deactivate SDXL image model"
+            accessibilityLabel="Desativar modelo de imagem SDXL"
           >
             <Ionicons name="power" size={14} color={C.text3} />
-            <Text style={styles.deleteText}>Deactivate to block image inference</Text>
+            <Text style={styles.deleteText}>Desativar geração de imagem</Text>
           </Pressable>
         )}
         {imageStatus?.valid && !imageStatus.active && (
-          <Text style={styles.inactiveHint}>Inactive — installed files remain, but Quartz will not start image inference.</Text>
+          <Text style={styles.inactiveHint}>Inativo — os arquivos continuam instalados, mas o Quartz não inicia a geração de imagem.</Text>
         )}
-        {!!imageStatus?.message && !imageStatus.valid && !imageDownloading && (
-          <Text style={styles.inactiveHint}>{imageStatus.message}</Text>
+        {!imageStatus?.valid && !imageDownloading && (
+          <Text style={styles.inactiveHint}>O pacote SDXL ainda não está pronto. Baixe ou verifique o modelo.</Text>
         )}
       </View>
 
       {importedModels.length > 0 && (
         <>
-          <Text style={styles.sectionTitle}>Imported models</Text>
+          <Text style={styles.sectionTitle}>Modelos importados</Text>
           {importedModels.map(([fileName, sizeBytes]) => {
             const isActive = active === fileName;
             return (
@@ -524,23 +524,23 @@ export default function ModelsScreen() {
                 <View style={styles.cardTop}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.cardName} numberOfLines={2}>{fileName}</Text>
-                    <Text style={styles.cardMeta}>{fmtBytes(sizeBytes)} · Local GGUF</Text>
-                    <Text style={styles.cardDesc}>Imported from Downloads</Text>
+                    <Text style={styles.cardMeta}>{fmtBytes(sizeBytes)} · GGUF local</Text>
+                    <Text style={styles.cardDesc}>Importado de Downloads</Text>
                   </View>
                   {!isActive ? (
                     <Pressable style={styles.action} onPress={() => { void onUseFile(fileName); }}>
-                      <Text style={styles.actionText}>Use</Text>
+                      <Text style={styles.actionText}>Usar</Text>
                     </Pressable>
                   ) : (
                     <View style={[styles.action, styles.activeChip]}>
                       <Ionicons name="checkmark-circle" size={16} color={C.green} />
-                      <Text style={[styles.actionText, { color: C.green }]}>Active</Text>
+                      <Text style={[styles.actionText, { color: C.green }]}>Ativo</Text>
                     </View>
                   )}
                 </View>
                 <Pressable style={styles.delete} onPress={() => { void onDeleteFile(fileName); }} hitSlop={8}>
                   <Ionicons name="trash-outline" size={14} color={C.text3} />
-                  <Text style={styles.deleteText}>Delete</Text>
+                  <Text style={styles.deleteText}>Excluir</Text>
                 </Pressable>
               </View>
             );
@@ -549,26 +549,26 @@ export default function ModelsScreen() {
       )}
 
       <Text style={styles.storage}>
-        {totalBytes > 0 ? `${fmtBytes(totalBytes)} of models on this device` : "No models downloaded yet"}
+        {totalBytes > 0 ? `${fmtBytes(totalBytes)} em modelos neste aparelho` : "Nenhum modelo baixado ainda"}
       </Text>
 
       <View style={styles.moreDivider} />
-      <Text style={styles.moreTitle}>More options</Text>
+      <Text style={styles.moreTitle}>Mais opções</Text>
 
       <View style={styles.importPanel}>
         <View style={styles.importCopy}>
-          <Text style={styles.importTitle}>Already downloaded a model?</Text>
-          <Text style={styles.importText}>Open Android&apos;s file search, choose a complete GGUF from Downloads, then copy it into Saient.</Text>
+          <Text style={styles.importTitle}>Já baixou um modelo?</Text>
+          <Text style={styles.importText}>Abra o seletor de arquivos do Android, escolha um GGUF completo em Downloads e copie-o para o Saient.</Text>
         </View>
         <Pressable
           style={[styles.searchButton, searching && styles.disabled]}
           onPress={() => { void onSearchDownloads(); }}
           disabled={searching || importingUri != null}
           accessibilityRole="button"
-          accessibilityLabel="Search Downloads for GGUF models"
+          accessibilityLabel="Pesquisar modelos GGUF em Downloads"
         >
           <Ionicons name={searching ? "hourglass-outline" : "search"} size={17} color={C.accent} />
-          <Text style={styles.searchButtonText}>{searching ? "Searching…" : "Search Downloads"}</Text>
+          <Text style={styles.searchButtonText}>{searching ? "Pesquisando…" : "Pesquisar em Downloads"}</Text>
         </Pressable>
       </View>
       {!!searchSummary && <Text style={styles.searchSummary}>{searchSummary}</Text>}
@@ -585,10 +585,10 @@ export default function ModelsScreen() {
               onPress={() => { void onImport(candidate); }}
               disabled={importingUri != null}
               accessibilityRole="button"
-              accessibilityLabel={`Import ${candidate.fileName}`}
+              accessibilityLabel={`Importar ${candidate.fileName}`}
             >
               <Ionicons name={importing ? "hourglass-outline" : "download-outline"} size={17} color={C.accent} />
-              <Text style={styles.actionText}>{importing ? "Copying…" : "Import"}</Text>
+              <Text style={styles.actionText}>{importing ? "Copiando…" : "Importar"}</Text>
             </Pressable>
           </View>
         );
@@ -597,26 +597,26 @@ export default function ModelsScreen() {
       <View style={styles.deviceTest}>
         <View style={styles.deviceHeader}>
           <Ionicons name="hardware-chip-outline" size={18} color={C.accent} />
-          <Text style={styles.deviceTitle}>Device model test</Text>
+          <Text style={styles.deviceTitle}>Teste de modelo do aparelho</Text>
         </View>
         <Text style={styles.deviceText}>
-          Check this phone&apos;s real memory and CPU, then get a conservative GGUF size recommendation. The test stays on-device.
+          Verifique a memória e CPU reais deste celular e receba uma recomendação conservadora de tamanho GGUF. O teste roda no aparelho.
         </Text>
         {deviceProfile && capability && (
           <View style={styles.deviceResult}>
-            <Text style={styles.recommendation}>Recommended: {capability.tier}</Text>
-            <Text style={styles.resultText}>{capability.parameters} · up to about {fmtBytes(capability.maxModelBytes)}</Text>
+            <Text style={styles.recommendation}>Recomendado: {capability.tier === "Tiny" ? "Pequeno" : capability.tier === "Medium" ? "Médio" : "Grande"}</Text>
+            <Text style={styles.resultText}>{capability.parameters} · até cerca de {fmtBytes(capability.maxModelBytes)}</Text>
             <Text style={styles.resultText}>{capability.quantization}</Text>
             <Text style={styles.deviceFacts}>
-              {fmtBytes(deviceProfile.totalMemoryBytes)} RAM · {deviceProfile.logicalCores} CPU cores · {deviceProfile.architecture}
+              {fmtBytes(deviceProfile.totalMemoryBytes)} RAM · {deviceProfile.logicalCores} núcleos de CPU · {deviceProfile.architecture}
             </Text>
             {deviceProfile.availableMemoryBytes != null && (
               <Text style={[styles.deviceFacts, capability.underMemoryPressure && { color: C.amber }]}>
-                {fmtBytes(deviceProfile.availableMemoryBytes)} available now
-                {capability.underMemoryPressure ? " — close other apps before loading a model" : ""}
+                {fmtBytes(deviceProfile.availableMemoryBytes)} disponíveis agora
+                {capability.underMemoryPressure ? " — feche outros apps antes de carregar um modelo" : ""}
               </Text>
             )}
-            <Text style={styles.caveat}>Guidance only: model architecture, quantization and context length also affect compatibility and memory use.</Text>
+            <Text style={styles.caveat}>Apenas orientação: arquitetura, quantização e tamanho de contexto também afetam compatibilidade e memória.</Text>
           </View>
         )}
         <Pressable
@@ -624,15 +624,15 @@ export default function ModelsScreen() {
           onPress={() => { void onTestDevice(); }}
           disabled={testingDevice}
           accessibilityRole="button"
-          accessibilityLabel="Test this device for model size"
+          accessibilityLabel="Testar este aparelho para tamanho de modelo"
         >
           <Ionicons name={testingDevice ? "hourglass-outline" : "speedometer-outline"} size={17} color={C.bg} />
-          <Text style={styles.testButtonText}>{testingDevice ? "Testing…" : deviceProfile ? "Test again" : "Test this device"}</Text>
+          <Text style={styles.testButtonText}>{testingDevice ? "Testando…" : deviceProfile ? "Testar novamente" : "Testar este aparelho"}</Text>
         </Pressable>
       </View>
 
       <Text style={styles.note}>
-        Curated models are open-licensed (Apache-2.0); see Settings → Open-source notices.
+        Os modelos selecionados usam licenças abertas (Apache-2.0); veja Configurações → Avisos de código aberto.
       </Text>
     </ScrollView>
   );

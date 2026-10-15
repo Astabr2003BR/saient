@@ -28,14 +28,14 @@ export function ChatHistoryModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.title}>Saved chats</Text>
-              <Text style={styles.subtitle}>{chats.length} saved on this phone</Text>
+              <Text style={styles.title}>Conversas salvas</Text>
+              <Text style={styles.subtitle}>{chats.length} salva(s) neste celular</Text>
             </View>
             <Pressable
               style={styles.iconButton}
               onPress={onClose}
               accessibilityRole="button"
-              accessibilityLabel="Close saved chats"
+              accessibilityLabel="Fechar conversas salvas"
             >
               <Ionicons name="close" size={21} color={C.text2} />
             </Pressable>
@@ -45,17 +45,17 @@ export function ChatHistoryModal({
             style={styles.newButton}
             onPress={onNew}
             accessibilityRole="button"
-            accessibilityLabel="Start a new chat"
+            accessibilityLabel="Iniciar uma nova conversa"
           >
             <Ionicons name="add" size={18} color="#0a0a12" />
-            <Text style={styles.newButtonText}>New chat</Text>
+            <Text style={styles.newButtonText}>Nova conversa</Text>
           </Pressable>
 
           <FlatList
             data={chats}
             keyExtractor={(chat) => chat.id}
             contentContainerStyle={chats.length === 0 ? styles.emptyList : styles.list}
-            ListEmptyComponent={<Text style={styles.emptyText}>No saved chats yet.</Text>}
+            ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma conversa salva ainda.</Text>}
             renderItem={({ item }) => {
               const active = item.id === activeChatId;
               return (
@@ -64,18 +64,18 @@ export function ChatHistoryModal({
                     style={styles.loadButton}
                     onPress={() => onLoad(item)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Open saved chat ${item.title}`}
+                    accessibilityLabel={`Abrir conversa salva ${item.title}`}
                   >
                     <Text style={styles.chatTitle} numberOfLines={1}>{item.title}</Text>
                     <Text style={styles.chatMeta}>
-                      {new Date(item.updatedAt).toLocaleString()} · {item.messages.length} messages
+                      {new Date(item.updatedAt).toLocaleString()} · {item.messages.length} mensagem(ns)
                     </Text>
                   </Pressable>
                   <Pressable
                     style={styles.deleteButton}
                     onPress={() => onDelete(item)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Delete saved chat ${item.title}`}
+                    accessibilityLabel={`Excluir conversa salva ${item.title}`}
                   >
                     <Ionicons name="trash-outline" size={18} color={C.red} />
                   </Pressable>

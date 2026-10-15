@@ -24,7 +24,7 @@ const STEPS: Step[] = [
   {
     icon: "chatbubble-ellipses-outline",
     title: "É só começar a conversar",
-    body: "Digite na aba Chat e o Saient responde no próprio aparelho. Assim ele continua funcionando até no modo avião, no ônibus ou em qualquer lugar.",
+    body: "Digite na aba Conversa e o Saient responde no próprio aparelho. Assim ele continua funcionando até no modo avião, no ônibus ou em qualquer lugar.",
   },
   {
     icon: "construct-outline",

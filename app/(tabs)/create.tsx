@@ -34,10 +34,10 @@ import {
 type Preset = { steps: number; label: string };
 
 const PRESETS: Preset[] = [
-  { steps: 4, label: "Quick" },
-  { steps: 6, label: "Balanced" },
-  { steps: 10, label: "Detailed" },
-  { steps: 20, label: "Quality" },
+  { steps: 4, label: "Rápido" },
+  { steps: 6, label: "Equilibrado" },
+  { steps: 10, label: "Detalhado" },
+  { steps: 20, label: "Qualidade" },
 ];
 const INTRO_KEY = "saient.local-diffusion-intro.sdxl.v1";
 
@@ -56,12 +56,12 @@ function progressFraction(progress: DiffusionProgress | null) {
 }
 
 function progressLabel(progress: DiffusionProgress | null) {
-  if (!progress) return "Preparing Quartz";
-  if (progress.phase === "encoding") return "Encoding prompt";
-  if (progress.phase === "decoding") return "Decoding PNG";
+  if (!progress) return "Preparando Quartz";
+  if (progress.phase === "encoding") return "Codificando descrição";
+  if (progress.phase === "decoding") return "Gerando PNG";
   return progress.completed > 0
-    ? `Denoising ${progress.completed} of ${progress.total}`
-    : "Starting denoising";
+    ? `Processando ${progress.completed} de ${progress.total}`
+    : "Iniciando processamento";
 }
 
 export default function CreateScreen() {
@@ -104,11 +104,11 @@ export default function CreateScreen() {
     try {
       const next = await downloadDiffusionModel();
       setStatus(next);
-      Alert.alert("Image model ready", "Quartz verified and installed the SDXL FP16 pack.");
+      Alert.alert("Modelo de imagem pronto", "O Quartz verificou e instalou o pacote SDXL FP16.");
     } catch (error) {
       const message = String(error);
       if (!message.toLocaleLowerCase().includes("cancel")) {
-        Alert.alert("Could not download image model", message);
+        Alert.alert("Não foi possível baixar o modelo de imagem", message);
       }
       await refresh();
     } finally {
@@ -150,11 +150,11 @@ export default function CreateScreen() {
       if (!active || seen) return;
       void SecureStore.setItemAsync(INTRO_KEY, "1").catch(() => {});
       Alert.alert(
-        "Image model needed",
-        "Phone image generation is offline and the model is not bundled into the APK. Saient can download and verify the 6.94 GB SDXL FP16 pack now.",
+        "Modelo de imagem necessário",
+        "A geração de imagens é local e o modelo não vem dentro do APK. O Saient pode baixar e verificar agora o pacote SDXL FP16 de 6,94 GB.",
         [
-          { text: "Later", style: "cancel" },
-          { text: "Download", onPress: () => { void downloadModel(); } },
+          { text: "Depois", style: "cancel" },
+          { text: "Baixar", onPress: () => { void downloadModel(); } },
         ],
       );
     }).catch(() => {});
@@ -163,15 +163,15 @@ export default function CreateScreen() {
 
   const generate = useCallback(async () => {
     if (!status?.valid) {
-      Alert.alert("Image model needed", "Download the Saient SDXL model first.");
+      Alert.alert("Modelo de imagem necessário", "Baixe primeiro o modelo Saient SDXL.");
       return;
     }
     if (!status.active) {
-      Alert.alert("Image model inactive", "Open Models and activate Saient SDXL before generating.");
+      Alert.alert("Modelo de imagem inativo", "Abra Modelos e ative o Saient SDXL antes de gerar.");
       return;
     }
     if (!prompt.trim()) {
-      Alert.alert("Prompt needed", "Describe the image you want Quartz to create.");
+      Alert.alert("Descrição necessária", "Descreva a imagem que você quer que o Quartz crie.");
       return;
     }
     setGenerating(true);
@@ -188,7 +188,7 @@ export default function CreateScreen() {
     } catch (error) {
       const message = String(error);
       if (!message.toLocaleLowerCase().includes("cancel")) {
-        Alert.alert("Image generation failed", message);
+        Alert.alert("Falha na geração da imagem", message);
       }
     } finally {
       setGenerating(false);
@@ -207,17 +207,17 @@ export default function CreateScreen() {
 
   const removePack = useCallback(() => {
     Alert.alert(
-      "Remove image model?",
-      "This frees about 6.94 GB. Your generated images stay on the phone.",
+      "Remover modelo de imagem?",
+      "Isso libera cerca de 6,94 GB. As imagens geradas permanecem no celular.",
       [
-        { text: "Keep", style: "cancel" },
+        { text: "Manter", style: "cancel" },
         {
-          text: "Remove",
+          text: "Remover",
           style: "destructive",
           onPress: () => {
             void removeDiffusionModel()
               .then(setStatus)
-              .catch((error) => Alert.alert("Could not remove model", String(error)));
+              .catch((error) => Alert.alert("Não foi possível remover o modelo", String(error)));
           },
         },
       ],
@@ -238,13 +238,13 @@ export default function CreateScreen() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.h1}>Create</Text>
-          <Text style={styles.sub}>SDXL, entirely on this phone through Quartz</Text>
+          <Text style={styles.h1}>Criar</Text>
+          <Text style={styles.sub}>SDXL totalmente local neste celular pelo Quartz</Text>
         </View>
         <View style={[styles.state, status?.active ? styles.stateReady : styles.stateWaiting]}>
           <Ionicons name={status?.active ? "checkmark-circle" : status?.valid ? "pause-circle-outline" : "download-outline"} size={15} color={status?.active ? C.green : C.amber} />
           <Text style={{ color: status?.active ? C.green : C.amber, fontSize: 11, fontWeight: "700" }}>
-            {checking ? "Checking" : status?.active ? "Ready" : status?.valid ? "Inactive" : "Model needed"}
+            {checking ? "Verificando" : status?.active ? "Pronto" : status?.valid ? "Inativo" : "Modelo necessário"}
           </Text>
         </View>
       </View>
@@ -254,11 +254,11 @@ export default function CreateScreen() {
           <View style={styles.setupIcon}>
             <Ionicons name="images-outline" size={34} color={C.accent} />
           </View>
-          <Text style={styles.setupTitle}>Add the Saient image model</Text>
+          <Text style={styles.setupTitle}>Adicionar modelo de imagem Saient</Text>
           <Text style={styles.setupText}>
-            Download the SDXL FP16 pack directly from the Saient Pi. Quartz verifies every file before an atomic install; interrupted downloads resume.
+            Baixe o pacote SDXL FP16 diretamente do Saient Pi. O Quartz verifica cada arquivo antes da instalação; downloads interrompidos podem continuar.
           </Text>
-          <Text style={styles.setupMeta}>About 6.94 GB · 1024×1024 · offline after setup</Text>
+          <Text style={styles.setupMeta}>Cerca de 6,94 GB · 1024×1024 · sem internet após configurar</Text>
           <Pressable
             style={[styles.primary, busy && styles.disabled]}
             onPress={() => { void downloadModel(); }}
@@ -268,7 +268,7 @@ export default function CreateScreen() {
           >
             <Ionicons name={downloading ? "cloud-download-outline" : "download-outline"} size={18} color={C.bg} />
             <Text style={styles.primaryText}>
-              {downloading ? `Downloading ${Math.floor(downloadFraction * 100)}%` : "Download model · 6.94 GB"}
+              {downloading ? `Baixando ${Math.floor(downloadFraction * 100)}%` : "Baixar modelo · 6,94 GB"}
             </Text>
           </Pressable>
           {downloading && (
@@ -276,7 +276,7 @@ export default function CreateScreen() {
               <View style={styles.track}>
                 <View style={[styles.fill, { width: `${Math.floor(downloadFraction * 100)}%` }]} />
               </View>
-              <Text style={styles.downloadFile} numberOfLines={1}>{downloadProgress?.currentFile ?? "Connecting to Saient"}</Text>
+              <Text style={styles.downloadFile} numberOfLines={1}>{downloadProgress?.currentFile ?? "Conectando ao Saient"}</Text>
               <Pressable
                 style={[styles.downloadCancel, cancellingDownload && styles.disabled]}
                 onPress={() => { void cancelDownload(); }}
@@ -284,7 +284,7 @@ export default function CreateScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ disabled: cancellingDownload }}
               >
-                <Text style={styles.cancelText}>{cancellingDownload ? "Stopping…" : "Cancel download"}</Text>
+                <Text style={styles.cancelText}>{cancellingDownload ? "Parando…" : "Cancelar download"}</Text>
               </Pressable>
             </View>
           )}
@@ -295,7 +295,7 @@ export default function CreateScreen() {
           >
             <Text style={styles.licenseText}>Stable Diffusion XL base 1.0 · OpenRAIL++</Text>
           </Pressable>
-          {!!status?.message && <Text style={styles.statusMessage}>{status.message}</Text>}
+          <Text style={styles.statusMessage}>{downloading ? "Baixando e verificando o pacote SDXL." : "Baixe o pacote SDXL para gerar imagens localmente."}</Text>
         </View>
       ) : (
         <>
@@ -303,10 +303,10 @@ export default function CreateScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.modelName}>Saient SDXL FP16</Text>
               <Text style={styles.modelMeta}>
-                {fmtBytes(status.modelBytes)} · {status.active ? "Active" : "Inactive"} · Quartz-owned Vulkan runtime
+                {fmtBytes(status.modelBytes)} · {status.active ? "Ativo" : "Inativo"} · execução Vulkan pelo Quartz
               </Text>
             </View>
-            <Pressable onPress={removePack} disabled={busy} hitSlop={10} accessibilityRole="button" accessibilityLabel="Remove image model">
+            <Pressable onPress={removePack} disabled={busy} hitSlop={10} accessibilityRole="button" accessibilityLabel="Remover modelo de imagem">
               <Ionicons name="trash-outline" size={18} color={C.text3} />
             </Pressable>
           </View>
@@ -314,11 +314,11 @@ export default function CreateScreen() {
           {!status.active && (
             <View style={styles.inactiveNotice}>
               <Ionicons name="battery-half-outline" size={17} color={C.amber} />
-              <Text style={styles.inactiveText}>Image inference is disabled. Activate SDXL from Models when you want to generate.</Text>
+              <Text style={styles.inactiveText}>A geração de imagens está desativada. Ative o SDXL em Modelos quando quiser gerar.</Text>
             </View>
           )}
 
-          <Text style={styles.label}>Prompt</Text>
+          <Text style={styles.label}>Descrição</Text>
           <TextInput
             style={styles.prompt}
             value={prompt}
@@ -326,21 +326,21 @@ export default function CreateScreen() {
             editable={!busy}
             multiline
             maxLength={1000}
-            placeholder="A cinematic photo of a fox in a snowy forest…"
+            placeholder="Uma imagem cinematográfica de uma raposa em uma floresta com neve…"
             placeholderTextColor={C.text3}
           />
-          <Text style={styles.label}>Avoid (optional)</Text>
+          <Text style={styles.label}>Evitar (opcional)</Text>
           <TextInput
             style={styles.negative}
             value={negativePrompt}
             onChangeText={setNegativePrompt}
             editable={!busy}
             maxLength={1000}
-            placeholder="blurry, distorted, text"
+            placeholder="borrado, distorcido, texto"
             placeholderTextColor={C.text3}
           />
 
-          <Text style={styles.label}>Quality</Text>
+          <Text style={styles.label}>Qualidade</Text>
           <View style={styles.presets}>
             {PRESETS.map((preset) => (
               <Pressable
@@ -350,18 +350,18 @@ export default function CreateScreen() {
                 disabled={busy}
                 accessibilityRole="button"
                 accessibilityState={{ selected: steps === preset.steps, disabled: busy }}
-                accessibilityLabel={`${preset.label}, ${preset.steps} steps`}
+                accessibilityLabel={`${preset.label}, ${preset.steps} passos`}
               >
                 <Text style={[styles.presetLabel, steps === preset.steps && { color: C.accent }]}>{preset.label}</Text>
-                <Text style={styles.presetSteps}>{preset.steps} steps</Text>
+                <Text style={styles.presetSteps}>{preset.steps} passos</Text>
               </Pressable>
             ))}
           </View>
-          <Text style={styles.estimate}>Phone speed and temperature vary; the first measured SDXL run will establish the real timing.</Text>
+          <Text style={styles.estimate}>A velocidade e a temperatura variam conforme o celular; a primeira geração SDXL medirá o tempo real.</Text>
 
           <View style={styles.seedRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Seed</Text>
+              <Text style={styles.label}>Semente</Text>
               <Text style={styles.seedValue}>{seed}</Text>
             </View>
             <Pressable
@@ -369,10 +369,10 @@ export default function CreateScreen() {
               onPress={() => setSeed(Math.floor(Math.random() * 2_147_483_647))}
               disabled={busy}
               accessibilityRole="button"
-              accessibilityLabel="Choose a random seed"
+              accessibilityLabel="Escolher uma semente aleatória"
             >
               <Ionicons name="shuffle" size={17} color={C.accent} />
-              <Text style={styles.randomText}>Random</Text>
+              <Text style={styles.randomText}>Aleatória</Text>
             </Pressable>
           </View>
 
@@ -385,7 +385,7 @@ export default function CreateScreen() {
               <View style={styles.track}>
                 <View style={[styles.fill, { width: `${Math.round(fraction * 100)}%` }]} />
               </View>
-              <Text style={styles.progressHint}>Chat is unloaded while Quartz creates the image, then restored automatically.</Text>
+              <Text style={styles.progressHint}>O chat é descarregado da memória enquanto o Quartz cria a imagem e volta automaticamente depois.</Text>
             </View>
           )}
 
@@ -396,12 +396,12 @@ export default function CreateScreen() {
                 style={styles.resultImage}
                 contentFit="contain"
                 transition={150}
-                accessibilityLabel="Image generated on this phone"
+                accessibilityLabel="Imagem gerada neste celular"
               />
               <View style={styles.resultBottom}>
                 <Ionicons name="checkmark-circle" size={17} color={C.green} />
                 <Text style={styles.resultMeta}>
-                  Saved on phone · {result.steps} steps · {result.elapsedSeconds.toFixed(1)}s
+                  Salva no celular · {result.steps} passos · {result.elapsedSeconds.toFixed(1)} s
                 </Text>
               </View>
             </View>
@@ -410,19 +410,19 @@ export default function CreateScreen() {
           {generating ? (
             <Pressable style={[styles.cancelButton, cancelling && styles.disabled]} onPress={() => { void cancel(); }} disabled={cancelling} accessibilityRole="button">
               <Ionicons name="stop-circle-outline" size={19} color={C.red} />
-              <Text style={styles.cancelText}>{cancelling ? "Stopping…" : "Cancel generation"}</Text>
+              <Text style={styles.cancelText}>{cancelling ? "Parando…" : "Cancelar geração"}</Text>
             </Pressable>
           ) : (
             <Pressable style={[styles.generateButton, (!prompt.trim() || !status.active) && styles.disabled]} onPress={() => { void generate(); }} disabled={!prompt.trim() || !status.active} accessibilityRole="button">
               <Ionicons name={status.active ? "sparkles" : "power"} size={19} color={C.bg} />
-              <Text style={styles.generateText}>{status.active ? "Generate on phone" : "Activate in Models"}</Text>
+              <Text style={styles.generateText}>{status.active ? "Gerar no celular" : "Ativar em Modelos"}</Text>
             </Pressable>
           )}
         </>
       )}
 
       <Text style={styles.foot}>
-        No ONNX Runtime and no cloud inference. Quartz owns model parsing, tokenization, scheduling, operators, memory and Vulkan dispatch.
+        Sem ONNX Runtime e sem inferência em nuvem. O Quartz controla o modelo, tokenização, processamento, memória e execução Vulkan.
       </Text>
     </ScrollView>
   );

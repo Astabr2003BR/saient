@@ -29,41 +29,41 @@ export default function SettingsScreen() {
       <View style={styles.hero}>
         <Mascot size={26} />
         <Text style={styles.brand}>SAIENT</Text>
-        <Text style={styles.tag}>Local AI, in your pocket.</Text>
+        <Text style={styles.tag}>IA local no seu bolso.</Text>
       </View>
 
-      <Text style={styles.section}>Engine</Text>
+      <Text style={styles.section}>Motor</Text>
       <View style={styles.group}>
-        <Row icon="flash" label="Inference engine" value="Quartz" />
-        <Row icon="hardware-chip" label="Runs on" value="This device" />
+        <Row icon="flash" label="Motor de inferência" value="Quartz" />
+        <Row icon="hardware-chip" label="Executa em" value="Este aparelho" />
       </View>
 
-      <Text style={styles.section}>About</Text>
+      <Text style={styles.section}>Sobre</Text>
       <View style={styles.group}>
-        <Row icon="information-circle" label="Version" value={version} />
+        <Row icon="information-circle" label="Versão" value={version} />
         <Row
           icon="globe"
-          label="Website"
+          label="Site"
           onPress={() => WebBrowser.openBrowserAsync("https://saient.co.uk")}
         />
         <Row
           icon="desktop"
-          label="Get Saient for desktop"
+          label="Saient para computador"
           onPress={() => WebBrowser.openBrowserAsync("https://saient.co.uk/#download")}
         />
         <Row
           icon="shield-checkmark"
-          label="Privacy"
+          label="Privacidade"
           onPress={() => WebBrowser.openBrowserAsync("https://saient.co.uk/privacy")}
         />
         <Row
           icon="document-text"
-          label="Open-source notices"
+          label="Avisos de código aberto"
           onPress={() => router.push("/notices")}
         />
       </View>
 
-      <Text style={styles.foot}>Everything runs on your phone. Nothing is sent to the cloud.</Text>
+      <Text style={styles.foot}>Tudo é executado no seu celular. Nada é enviado para a nuvem.</Text>
     </ScrollView>
   );
 }

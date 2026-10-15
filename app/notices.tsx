@@ -17,13 +17,13 @@ export default function NoticesScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={24} color={C.text} />
         </Pressable>
-        <Text style={styles.h1}>Open-source notices</Text>
+        <Text style={styles.h1}>Avisos de código aberto</Text>
       </View>
 
       <Text style={styles.intro}>
-        Saient&apos;s Quartz chat and SDXL paths are built in-house. Experimental Wan video uses a
-        pinned stable-diffusion.cpp/ggml backend. Downloaded models remain third-party open weights
-        under their own licenses:
+        Os fluxos de conversa Quartz e SDXL do Saient são desenvolvidos internamente. O vídeo Wan experimental usa um
+        backend stable-diffusion.cpp/ggml fixado. Os modelos baixados continuam sendo pesos abertos de terceiros
+        sob suas próprias licenças:
       </Text>
 
       {FALLBACK.map((m) => (
@@ -31,11 +31,11 @@ export default function NoticesScreen() {
           <Text style={styles.name}>{m.name}</Text>
           <Text style={styles.meta}>{m.params} · {m.quant} · {m.license}</Text>
           <Text style={styles.copy}>
-            © Alibaba Cloud, Qwen team. Licensed under the Apache License 2.0. GGUF quantization published by ggml-org.
+            © Alibaba Cloud, Qwen team. Licenciado sob Apache License 2.0. Quantização GGUF publicada pela ggml-org.
           </Text>
           {m.licenseUrl ? (
             <Pressable onPress={() => WebBrowser.openBrowserAsync(m.licenseUrl!)}>
-              <Text style={styles.link}>View model license →</Text>
+              <Text style={styles.link}>Ver licença do modelo →</Text>
             </Pressable>
           ) : null}
         </View>
@@ -45,10 +45,10 @@ export default function NoticesScreen() {
         <Text style={styles.name}>Stable Diffusion XL base 1.0</Text>
         <Text style={styles.meta}>FP16 · CreativeML Open RAIL++-M</Text>
         <Text style={styles.copy}>
-          SDXL base weights published by Stability AI. Saient distributes the FP16 pipeline components used by Quartz.
+          Pesos base SDXL publicados pela Stability AI. O Saient distribui os componentes FP16 usados pelo Quartz.
         </Text>
         <Pressable onPress={() => WebBrowser.openBrowserAsync("https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md")}>
-          <Text style={styles.link}>View SDXL license →</Text>
+          <Text style={styles.link}>Ver licença do SDXL →</Text>
         </Pressable>
       </View>
 
@@ -56,10 +56,10 @@ export default function NoticesScreen() {
         <Text style={styles.name}>SDXL VAE FP16 Fix</Text>
         <Text style={styles.meta}>FP16 · MIT</Text>
         <Text style={styles.copy}>
-          FP16-compatible SDXL VAE weights published by madebyollin, used to avoid the numerical instability of the original FP16 VAE.
+          Pesos VAE SDXL compatíveis com FP16 publicados por madebyollin, usados para evitar a instabilidade numérica do VAE FP16 original.
         </Text>
         <Pressable onPress={() => WebBrowser.openBrowserAsync("https://huggingface.co/madebyollin/sdxl-vae-fp16-fix")}>
-          <Text style={styles.link}>View VAE model and license →</Text>
+          <Text style={styles.link}>Ver modelo VAE e licença →</Text>
         </Pressable>
       </View>
 
@@ -67,10 +67,10 @@ export default function NoticesScreen() {
         <Text style={styles.name}>Wan2.1 T2V 1.3B + UMT5 XXL encoder</Text>
         <Text style={styles.meta}>Q4_K / Q2_K ultra-low-memory pack · Apache License 2.0</Text>
         <Text style={styles.copy}>
-          Wan video weights are published by the Wan team. The UMT5 GGUF encoder conversion is published by city96.
+          Os pesos de vídeo Wan são publicados pela equipe Wan. A conversão do codificador UMT5 GGUF é publicada por city96.
         </Text>
         <Pressable onPress={() => WebBrowser.openBrowserAsync("https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B") }>
-          <Text style={styles.link}>View Wan model and license →</Text>
+          <Text style={styles.link}>Ver modelo Wan e licença →</Text>
         </Pressable>
       </View>
 
@@ -78,25 +78,25 @@ export default function NoticesScreen() {
         <Text style={styles.name}>stable-diffusion.cpp</Text>
         <Text style={styles.meta}>Wan inference backend · MIT</Text>
         <Text style={styles.copy}>
-          Copyright © 2023 leejet and contributors. Saient ships a pinned, locally patched arm64 Vulkan build for experimental video inference.
+          Copyright © 2023 leejet and contributors. O Saient inclui um build arm64 Vulkan fixado e ajustado localmente para inferência experimental de vídeo.
         </Text>
         <Pressable onPress={() => WebBrowser.openBrowserAsync("https://github.com/leejet/stable-diffusion.cpp/blob/master/LICENSE") }>
-          <Text style={styles.link}>View backend license →</Text>
+          <Text style={styles.link}>Ver licença do backend →</Text>
         </Pressable>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.name}>Apache License 2.0</Text>
         <Text style={styles.copy}>
-          The full Apache 2.0 license text governs the models above. You may use, modify, and redistribute
-          them under its terms, retaining this notice.
+          O texto completo da licença Apache 2.0 rege os modelos acima. Você pode usar, modificar e redistribuir
+          esses modelos conforme os termos da licença, mantendo este aviso.
         </Text>
         <Pressable onPress={() => WebBrowser.openBrowserAsync("https://www.apache.org/licenses/LICENSE-2.0")}>
-          <Text style={styles.link}>Read the full Apache 2.0 license →</Text>
+          <Text style={styles.link}>Ler a licença Apache 2.0 completa →</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.foot}>Quartz engine © StaticPlay. Wan backend attribution above. Everything runs on your device.</Text>
+      <Text style={styles.foot}>Motor Quartz © StaticPlay. Atribuição do backend Wan acima. Tudo é executado no seu aparelho.</Text>
     </ScrollView>
   );
 }
