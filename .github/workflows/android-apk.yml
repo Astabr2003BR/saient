@@ -11,6 +11,11 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/ptbr-video-studio
+    paths:
+      - '.github/apk-build-trigger'
 
 jobs:
   build:
