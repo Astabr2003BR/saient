@@ -6,7 +6,11 @@ on:
       - feat/ptbr-video-studio
     paths:
       - 'lib/video-studio/**'
+      - 'modules/saient-video-studio/**'
+      - 'plugins/withTextToSpeechQueries.js'
       - 'scripts/test-video-studio.mjs'
+      - 'scripts/test-video-studio-native-contract.mjs'
+      - 'app.json'
       - 'package.json'
       - '.github/workflows/video-studio-contract.yml'
   workflow_dispatch:
@@ -24,5 +28,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Test PT-BR video studio contracts
+      - name: Test PT-BR narration and caption contracts
         run: npm run test:video-studio
+
+      - name: Test offline PT-BR TTS native contract
+        run: npm run test:video-studio-native

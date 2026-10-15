@@ -12,8 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "co.uk.staticplay.app",
-      "infoPlist": {
-      }
+      "infoPlist": {}
     },
     "android": {
       "package": "co.uk.staticplay.app",
@@ -74,6 +73,7 @@
       ],
       "./plugins/quartz/withQuartzEngine",
       "./plugins/withReleaseSigning",
+      "./plugins/withTextToSpeechQueries",
       [
         "expo-video",
         {
