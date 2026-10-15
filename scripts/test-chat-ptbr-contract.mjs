@@ -7,7 +7,7 @@ const quartz = fs.readFileSync("lib/quartz.ts", "utf8");
 for (const forbidden of [
   "You are Saient, a helpful AI assistant running entirely on this phone.",
   "You are Saient Build, an on-device web prototyper.",
-  '{ text: "Delete",',
+  'text: "Delete",',
 ]) {
   assert.equal(chat.includes(forbidden), false, `chat still contains English runtime text: ${forbidden}`);
 }
@@ -15,8 +15,9 @@ for (const forbidden of [
 for (const required of [
   "Responda sempre em português do Brasil",
   "Você é o Saient Build",
+  'text: "Excluir",',
 ]) {
-  assert.equal(chat.includes(required), true, `missing PT-BR chat instruction: ${required}`);
+  assert.equal(chat.includes(required), true, `missing PT-BR chat instruction/label: ${required}`);
 }
 
 for (const forbidden of [
