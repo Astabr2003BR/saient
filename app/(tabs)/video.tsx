@@ -40,19 +40,18 @@ import {
   type OfflineVoice,
 } from "@/modules/saient-video-studio";
 
-// Below 8 steps Wan cannot resolve a human subject at all — 1 step renders a flat colour
-// field and 4 renders a translucent silhouette. Those are not "fast" presets, they are
-// broken ones, so the ladder now starts where output is actually usable.
+// Abaixo de 8 passos, o Wan não resolve bem pessoas. Por isso os presets
+// começam no ponto em que a saída já é utilizável.
 const STEP_PRESETS = [
-  { value: 8, label: "Standard" },
-  { value: 12, label: "High" },
-  { value: 20, label: "Max" },
+  { value: 8, label: "Padrão" },
+  { value: 12, label: "Alta" },
+  { value: 20, label: "Máxima" },
 ];
 
 const FRAME_PRESETS = [
-  { value: 5, label: "5 frames" },
-  { value: 17, label: "2 sec" },
-  { value: 41, label: "5 sec" },
+  { value: 5, label: "5 quadros" },
+  { value: 17, label: "2 s" },
+  { value: 41, label: "5 s" },
 ];
 
 const SPEECH_RATE_PRESETS = [
@@ -74,8 +73,24 @@ function phaseLabel(phase: VideoStudioPipelinePhase | undefined) {
     case "promoting": return "Salvando vídeo final";
     case "cleanup": return "Limpando arquivos temporários";
     case "done": return "Concluído";
-    default: return "Preparando Video Studio";
+    default: return "Preparando Estúdio de Vídeo";
   }
+}
+
+function statusLabel(checking: boolean, status: DiffusionStatus | null) {
+  if (checking) return "Verificando";
+  if (status?.active) return "Pronto";
+  if (status?.valid) return "Inativo";
+  return "Modelo necessário";
+}
+
+function statusMessage(status: DiffusionStatus | null, downloading: boolean) {
+  if (downloading) return "Baixando e verificando o pacote de vídeo Wan2.1.";
+  if (!status) return "Verificando o pacote de vídeo Wan2.1.";
+  if (!status.available) return "O módulo Wan não está disponível neste aparelho.";
+  if (status.active) return "Pacote Wan2.1 ativo e pronto para gerar vídeos.";
+  if (status.valid) return "Pacote Wan2.1 instalado. Ative o modelo para gerar vídeos.";
+  return "Baixe o pacote de vídeo Wan2.1 para começar.";
 }
 
 function GeneratedVideo({ result }: { result: VideoGenerationResult }) {
@@ -95,7 +110,7 @@ function GeneratedVideo({ result }: { result: VideoGenerationResult }) {
       <View style={styles.resultBottom}>
         <Ionicons name="checkmark-circle" size={17} color={C.green} />
         <Text style={styles.resultMeta}>
-          {result.frames} frames · {result.steps} steps · {result.elapsedSeconds.toFixed(1)}s
+          {result.frames} quadros · {result.steps} passos · {result.elapsedSeconds.toFixed(1)} s
         </Text>
       </View>
     </View>
@@ -182,12 +197,12 @@ export default function VideoScreen() {
         return list[0]?.name ?? null;
       });
       if (list.length === 0) {
-        setVoiceError("Nenhuma voz PT-BR offline instalada.");
+        setVoiceError("Nenhuma voz PT-BR sem internet instalada.");
       }
     } catch (error) {
       setVoices([]);
       setSelectedVoice(null);
-      setVoiceError(String(error));
+      setVoiceError(`Não foi possível carregar as vozes: ${String(error)}`);
     } finally {
       setVoiceLoading(false);
     }
@@ -235,7 +250,7 @@ export default function VideoScreen() {
       return;
     }
     if (!prompt.trim()) {
-      Alert.alert("Prompt necessário", "Descreva o movimento que o Wan deve criar.");
+      Alert.alert("Descrição necessária", "Descreva o movimento que o Wan deve criar.");
       return;
     }
     setGenerating(true);
@@ -265,7 +280,7 @@ export default function VideoScreen() {
   const dubAndExport = useCallback(async () => {
     if (!result) return;
     if (!videoStudioAvailable()) {
-      Alert.alert("Video Studio indisponível", "Este build não contém o módulo Android de dublagem e exportação.");
+      Alert.alert("Estúdio de Vídeo indisponível", "Este build não contém o módulo Android de dublagem e exportação.");
       return;
     }
     if (!narration.trim()) {
@@ -273,7 +288,7 @@ export default function VideoScreen() {
       return;
     }
     if (!selectedVoice || voices.length === 0) {
-      Alert.alert("Voz offline necessária", "Instale ou atualize uma voz PT-BR offline e toque em Atualizar vozes.");
+      Alert.alert("Voz sem internet necessária", "Instale ou atualize uma voz PT-BR no aparelho e toque em Atualizar vozes.");
       return;
     }
 
@@ -345,13 +360,13 @@ export default function VideoScreen() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.h1}>Video</Text>
+          <Text style={styles.h1}>Vídeo</Text>
           <Text style={styles.sub}>Wan2.1 local · dublagem e legendas PT-BR</Text>
         </View>
         <View style={[styles.state, status?.active ? styles.stateReady : styles.stateWaiting]}>
           <Ionicons name={status?.active ? "checkmark-circle" : "flask-outline"} size={15} color={status?.active ? C.green : C.amber} />
           <Text style={{ color: status?.active ? C.green : C.amber, fontSize: 11, fontWeight: "700" }}>
-            {checking ? "Checking" : status?.active ? "Ready" : status?.valid ? "Inactive" : "Model needed"}
+            {statusLabel(checking, status)}
           </Text>
         </View>
       </View>
@@ -359,19 +374,19 @@ export default function VideoScreen() {
       {!status?.valid ? (
         <View style={styles.setupCard}>
           <View style={styles.setupIcon}><Ionicons name="videocam-outline" size={34} color={C.accent} /></View>
-          <Text style={styles.setupTitle}>Add the Wan video pack</Text>
+          <Text style={styles.setupTitle}>Adicionar pacote de vídeo Wan</Text>
           <Text style={styles.setupText}>
-            Download the quantized Wan2.1 1.3B transformer, UMT5-XXL Q4_K_M encoder and VAE from the Saient Pi. Every file is SHA-256 checked before installation.
+            Baixe o transformador Wan2.1 1.3B quantizado, o codificador UMT5-XXL Q4_K_M e o VAE do Saient Pi. Todos os arquivos são verificados por SHA-256 antes da instalação.
           </Text>
-          <Text style={styles.setupMeta}>4.73 GB · 416×240 profile · offline after setup</Text>
+          <Text style={styles.setupMeta}>4,73 GB · perfil 416×240 · sem internet após configurar</Text>
           <Pressable style={[styles.primary, busy && styles.disabled]} onPress={() => { void download(); }} disabled={busy || !status?.available}>
             <Ionicons name="download-outline" size={18} color={C.bg} />
-            <Text style={styles.primaryText}>{downloading ? `Downloading ${Math.floor(downloadFraction * 100)}%` : "Download Wan pack"}</Text>
+            <Text style={styles.primaryText}>{downloading ? `Baixando ${Math.floor(downloadFraction * 100)}%` : "Baixar pacote Wan"}</Text>
           </Pressable>
           {downloading && (
             <View style={styles.downloadProgress}>
               <View style={styles.track}><View style={[styles.fill, { width: `${Math.floor(downloadFraction * 100)}%` }]} /></View>
-              <Text style={styles.progressHint} numberOfLines={1}>{downloadProgress?.currentFile ?? "Connecting to Saient Pi"}</Text>
+              <Text style={styles.progressHint} numberOfLines={1}>{downloadProgress?.currentFile ?? "Conectando ao Saient Pi"}</Text>
               <Pressable
                 style={[styles.textButton, cancellingDownload && styles.disabled]}
                 disabled={cancellingDownload}
@@ -380,45 +395,45 @@ export default function VideoScreen() {
                   void cancelDiffusionModelDownload().finally(() => setCancellingDownload(false));
                 }}
               >
-                <Text style={styles.dangerText}>{cancellingDownload ? "Stopping…" : "Cancel download"}</Text>
+                <Text style={styles.dangerText}>{cancellingDownload ? "Parando…" : "Cancelar download"}</Text>
               </Pressable>
             </View>
           )}
           <Pressable style={styles.licenseButton} onPress={() => { void WebBrowser.openBrowserAsync("https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B"); }}>
-            <Text style={styles.licenseText}>Wan2.1 T2V 1.3B model details</Text>
+            <Text style={styles.licenseText}>Detalhes do modelo Wan2.1 T2V 1.3B</Text>
           </Pressable>
-          {!!status?.message && <Text style={styles.statusMessage}>{status.message}</Text>}
+          <Text style={styles.statusMessage}>{statusMessage(status, downloading)}</Text>
         </View>
       ) : (
         <>
           <View style={[styles.modelCard, !status.active && { borderColor: C.amber }]}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.modelName}>Wan2.1 T2V 1.3B mobile pack</Text>
-              <Text style={styles.modelMeta}>{fmtBytes(status.modelBytes)} · {status.active ? "Active" : "Inactive"} · Vulkan</Text>
+              <Text style={styles.modelName}>Pacote móvel Wan2.1 T2V 1.3B</Text>
+              <Text style={styles.modelMeta}>{fmtBytes(status.modelBytes)} · {status.active ? "Ativo" : "Inativo"} · Vulkan</Text>
             </View>
             {!status.active && (
               <Pressable onPress={() => { void setVideoModelActive(true).then(setStatus); }} disabled={busy}>
-                <Text style={styles.actionText}>Activate</Text>
+                <Text style={styles.actionText}>Ativar</Text>
               </Pressable>
             )}
             <Pressable
               hitSlop={10}
               disabled={busy}
-              onPress={() => Alert.alert("Remove Wan model?", "Generated videos stay on the phone.", [
-                { text: "Keep", style: "cancel" },
-                { text: "Remove", style: "destructive", onPress: () => { void removeVideoModel().then(setStatus); } },
+              onPress={() => Alert.alert("Remover modelo Wan?", "Os vídeos gerados permanecerão no celular.", [
+                { text: "Manter", style: "cancel" },
+                { text: "Remover", style: "destructive", onPress: () => { void removeVideoModel().then(setStatus); } },
               ])}
             >
               <Ionicons name="trash-outline" size={18} color={C.text3} />
             </Pressable>
           </View>
 
-          <Text style={styles.label}>Motion prompt</Text>
-          <TextInput style={styles.prompt} value={prompt} onChangeText={setPrompt} editable={!busy} multiline maxLength={1000} placeholder="A red fox turns toward the camera as snow falls…" placeholderTextColor={C.text3} />
-          <Text style={styles.label}>Avoid (optional)</Text>
-          <TextInput style={styles.negative} value={negativePrompt} onChangeText={setNegativePrompt} editable={!busy} maxLength={1000} placeholder="static, blurry, distorted, text" placeholderTextColor={C.text3} />
+          <Text style={styles.label}>Descrição do movimento</Text>
+          <TextInput style={styles.prompt} value={prompt} onChangeText={setPrompt} editable={!busy} multiline maxLength={1000} placeholder="Uma raposa vermelha vira para a câmera enquanto a neve cai…" placeholderTextColor={C.text3} />
+          <Text style={styles.label}>Evitar (opcional)</Text>
+          <TextInput style={styles.negative} value={negativePrompt} onChangeText={setNegativePrompt} editable={!busy} maxLength={1000} placeholder="estático, borrado, distorcido, texto" placeholderTextColor={C.text3} />
 
-          <Text style={styles.label}>Steps</Text>
+          <Text style={styles.label}>Passos</Text>
           <View style={styles.presets}>
             {STEP_PRESETS.map((preset) => (
               <Pressable key={preset.value} style={[styles.preset, steps === preset.value && styles.presetOn]} onPress={() => setSteps(preset.value)} disabled={busy}>
@@ -428,32 +443,32 @@ export default function VideoScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Length at 8 fps</Text>
+          <Text style={styles.label}>Duração a 8 fps</Text>
           <View style={styles.presets}>
             {FRAME_PRESETS.map((preset) => (
               <Pressable key={preset.value} style={[styles.preset, frames === preset.value && styles.presetOn]} onPress={() => setFrames(preset.value)} disabled={busy}>
                 <Text style={[styles.presetLabel, frames === preset.value && { color: C.accent }]}>{preset.label}</Text>
-                <Text style={styles.presetMeta}>{preset.value}f</Text>
+                <Text style={styles.presetMeta}>{preset.value} q</Text>
               </Pressable>
             ))}
           </View>
-          <Text style={styles.warning}>Start with 5 frames at Standard. Longer clips and higher step counts take considerably longer and heat the phone.</Text>
+          <Text style={styles.warning}>Comece com 5 quadros no modo Padrão. Vídeos mais longos e com mais passos demoram bastante mais e aquecem o celular.</Text>
 
           <View style={styles.seedRow}>
-            <View style={{ flex: 1 }}><Text style={styles.label}>Seed</Text><Text style={styles.seedValue}>{seed}</Text></View>
+            <View style={{ flex: 1 }}><Text style={styles.label}>Semente</Text><Text style={styles.seedValue}>{seed}</Text></View>
             <Pressable style={styles.randomButton} onPress={() => setSeed(Math.floor(Math.random() * 2_147_483_647))} disabled={busy}>
-              <Ionicons name="shuffle" size={17} color={C.accent} /><Text style={styles.actionText}>Random</Text>
+              <Ionicons name="shuffle" size={17} color={C.accent} /><Text style={styles.actionText}>Aleatória</Text>
             </Pressable>
           </View>
 
           {generating && (
             <View style={styles.progressCard}>
               <View style={styles.progressTop}>
-                <Text style={styles.progressLabel}>{progress ? `Processing ${progress.completed} of ${progress.total}` : "Loading Wan"}</Text>
+                <Text style={styles.progressLabel}>{progress ? `Processando ${progress.completed} de ${progress.total}` : "Carregando Wan"}</Text>
                 <Text style={styles.progressPct}>{Math.round(generationFraction * 100)}%</Text>
               </View>
               <View style={styles.track}><View style={[styles.fill, { width: `${Math.round(generationFraction * 100)}%` }]} /></View>
-              <Text style={styles.progressHint}>Chat is unloaded until the native video process exits.</Text>
+              <Text style={styles.progressHint}>O chat fica descarregado da memória até o processo nativo de vídeo terminar.</Text>
             </View>
           )}
 
@@ -465,11 +480,11 @@ export default function VideoScreen() {
               disabled={cancelling}
               onPress={() => { setCancelling(true); void cancelLocalVideo().finally(() => setCancelling(false)); }}
             >
-              <Ionicons name="stop-circle-outline" size={19} color={C.red} /><Text style={styles.dangerText}>{cancelling ? "Stopping…" : "Cancel generation"}</Text>
+              <Ionicons name="stop-circle-outline" size={19} color={C.red} /><Text style={styles.dangerText}>{cancelling ? "Parando…" : "Cancelar geração"}</Text>
             </Pressable>
           ) : (
             <Pressable style={[styles.generateButton, (!prompt.trim() || !status.active || postProcessing) && styles.disabled]} disabled={!prompt.trim() || !status.active || postProcessing} onPress={() => { void generate(); }}>
-              <Ionicons name="videocam" size={19} color={C.bg} /><Text style={styles.generateText}>Generate on phone</Text>
+              <Ionicons name="videocam" size={19} color={C.bg} /><Text style={styles.generateText}>Gerar no celular</Text>
             </Pressable>
           )}
 
@@ -478,7 +493,7 @@ export default function VideoScreen() {
               <View style={styles.studioHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.studioTitle}>Dublagem PT-BR</Text>
-                  <Text style={styles.studioSub}>Offline · sem créditos · voz do Android</Text>
+                  <Text style={styles.studioSub}>Sem internet · sem créditos · voz do Android</Text>
                 </View>
                 <Ionicons name="mic-outline" size={22} color={C.accent} />
               </View>
@@ -495,11 +510,11 @@ export default function VideoScreen() {
                 placeholderTextColor={C.text3}
               />
               <Text style={styles.durationHint}>
-                Vídeo bruto: {(result.frames / result.fps).toFixed(2)}s. A fala precisa caber nesse tempo.
+                Vídeo bruto: {(result.frames / result.fps).toFixed(2)} s. A fala precisa caber nesse tempo.
               </Text>
 
               <View style={styles.rowBetween}>
-                <Text style={styles.label}>Voz offline PT-BR</Text>
+                <Text style={styles.label}>Voz PT-BR sem internet</Text>
                 <Pressable style={styles.refreshVoice} disabled={voiceLoading || postProcessing} onPress={() => { void refreshVoices(); }}>
                   <Ionicons name="refresh" size={14} color={C.accent} />
                   <Text style={styles.actionText}>{voiceLoading ? "Buscando…" : "Atualizar vozes"}</Text>
@@ -521,7 +536,7 @@ export default function VideoScreen() {
                   ))}
                 </View>
               ) : (
-                <Text style={styles.voiceEmpty}>{voiceLoading ? "Procurando vozes PT-BR offline…" : "Nenhuma voz PT-BR offline instalada."}</Text>
+                <Text style={styles.voiceEmpty}>{voiceLoading ? "Procurando vozes PT-BR sem internet…" : "Nenhuma voz PT-BR sem internet instalada."}</Text>
               )}
               {!!voiceError && <Text style={styles.voiceError}>{voiceError}</Text>}
 
@@ -543,7 +558,7 @@ export default function VideoScreen() {
               <View style={styles.toggleRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.toggleTitle}>Legendas</Text>
-                  <Text style={styles.toggleSub}>Queimadas no MP4 e sincronizadas com a dublagem.</Text>
+                  <Text style={styles.toggleSub}>Gravadas no MP4 e sincronizadas com a dublagem.</Text>
                 </View>
                 <Switch
                   value={captionsEnabled}
@@ -584,7 +599,7 @@ export default function VideoScreen() {
 
               {finalVideo && (
                 <>
-                  <Text style={styles.finalLabel}>Video final</Text>
+                  <Text style={styles.finalLabel}>Vídeo final</Text>
                   <FinalVideo result={finalVideo} />
                 </>
               )}
