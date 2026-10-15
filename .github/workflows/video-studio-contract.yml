@@ -8,7 +8,9 @@ on:
       - 'app/(tabs)/video.tsx'
       - 'lib/video-studio/**'
       - 'modules/saient-video-studio/**'
+      - 'modules/saient-diffusion/**'
       - 'plugins/withTextToSpeechQueries.js'
+      - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-video-studio.mjs'
       - 'scripts/test-video-studio-native-contract.mjs'
       - 'scripts/test-video-studio-export-contract.mjs'
@@ -33,6 +35,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+
+      - name: Test existing Wan generation contract
+        run: npm run test:wan
 
       - name: Test PT-BR narration and caption contracts
         run: npm run test:video-studio
