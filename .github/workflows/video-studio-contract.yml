@@ -10,6 +10,7 @@ on:
       - 'plugins/withTextToSpeechQueries.js'
       - 'scripts/test-video-studio.mjs'
       - 'scripts/test-video-studio-native-contract.mjs'
+      - 'scripts/test-video-studio-export-contract.mjs'
       - 'app.json'
       - 'package.json'
       - '.github/workflows/video-studio-contract.yml'
@@ -33,3 +34,6 @@ jobs:
 
       - name: Test offline PT-BR TTS native contract
         run: npm run test:video-studio-native
+
+      - name: Test dubbed MP4 export native contract
+        run: npm run test:video-studio-export

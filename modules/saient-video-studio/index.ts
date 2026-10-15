@@ -1,4 +1,8 @@
 import SaientVideoStudioModule, {
+  type ExportAudioSegment,
+  type ExportCaption,
+  type ExportDubbedVideoOptions,
+  type ExportDubbedVideoResult,
   type OfflineVoice,
   type SpeechSynthesisOptions,
   type SynthesizedSegment,
@@ -29,4 +33,22 @@ export function cancelSpeechSynthesis(): Promise<boolean> {
   return requiredModule().cancelSpeechSynthesis();
 }
 
-export type { OfflineVoice, SpeechSynthesisOptions, SynthesizedSegment };
+export function exportDubbedVideo(
+  options: ExportDubbedVideoOptions,
+): Promise<ExportDubbedVideoResult> {
+  return requiredModule().exportDubbedVideo(options);
+}
+
+export function cancelVideoExport(): Promise<boolean> {
+  return requiredModule().cancelVideoExport();
+}
+
+export type {
+  ExportAudioSegment,
+  ExportCaption,
+  ExportDubbedVideoOptions,
+  ExportDubbedVideoResult,
+  OfflineVoice,
+  SpeechSynthesisOptions,
+  SynthesizedSegment,
+};
