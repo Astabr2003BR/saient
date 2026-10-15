@@ -3,9 +3,15 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import * as WebBrowser from "expo-web-browser";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/lib/theme";
+import {
+  runVideoStudioPostProcess,
+  type VideoStudioPipelinePhase,
+  type VideoStudioPipelineProgress,
+  type VideoStudioPostProcessResult,
+} from "@/lib/video-studio/pipeline";
 import {
   addDiffusionDownloadProgressListener,
   addVideoProgressListener,
@@ -22,6 +28,17 @@ import {
   type VideoGenerationResult,
   type VideoProgress,
 } from "@/modules/saient-diffusion";
+import {
+  cancelSpeechSynthesis,
+  cancelVideoExport,
+  cleanupSynthesizedSegments,
+  exportDubbedVideo,
+  getOfflineVoices,
+  promoteVideoStudioExport,
+  synthesizeSpeechSegment,
+  videoStudioAvailable,
+  type OfflineVoice,
+} from "@/modules/saient-video-studio";
 
 // Below 8 steps Wan cannot resolve a human subject at all — 1 step renders a flat colour
 // field and 4 renders a translucent silhouette. Those are not "fast" presets, they are
@@ -38,10 +55,27 @@ const FRAME_PRESETS = [
   { value: 41, label: "5 sec" },
 ];
 
+const SPEECH_RATE_PRESETS = [
+  { value: 0.9, label: "Calma" },
+  { value: 1, label: "Normal" },
+  { value: 1.15, label: "Rápida" },
+];
+
 function fmtBytes(bytes: number) {
   return bytes >= 1_000_000_000
     ? `${(bytes / 1_000_000_000).toFixed(2)} GB`
     : `${Math.round(bytes / 1_000_000)} MB`;
+}
+
+function phaseLabel(phase: VideoStudioPipelinePhase | undefined) {
+  switch (phase) {
+    case "synthesizing": return "Gerando dublagem PT-BR";
+    case "exporting": return "Montando áudio, vídeo e legendas";
+    case "promoting": return "Salvando vídeo final";
+    case "cleanup": return "Limpando arquivos temporários";
+    case "done": return "Concluído";
+    default: return "Preparando Video Studio";
+  }
 }
 
 function GeneratedVideo({ result }: { result: VideoGenerationResult }) {
@@ -68,6 +102,29 @@ function GeneratedVideo({ result }: { result: VideoGenerationResult }) {
   );
 }
 
+function FinalVideo({ result }: { result: VideoStudioPostProcessResult }) {
+  const player = useVideoPlayer(result.uri, (instance) => {
+    instance.loop = true;
+  });
+  return (
+    <View style={[styles.resultCard, styles.finalCard]}>
+      <VideoView
+        player={player}
+        style={styles.video}
+        nativeControls
+        contentFit="contain"
+        fullscreenOptions={{ enable: true }}
+      />
+      <View style={styles.resultBottom}>
+        <Ionicons name="checkmark-circle" size={17} color={C.green} />
+        <Text style={styles.resultMeta}>
+          MP4 · {fmtBytes(result.fileBytes)} · {result.audioSegmentCount} fala(s) · {result.captionCount} legenda(s)
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export default function VideoScreen() {
   const insets = useSafeAreaInsets();
   const [status, setStatus] = useState<DiffusionStatus | null>(null);
@@ -85,6 +142,18 @@ export default function VideoScreen() {
   const [downloadProgress, setDownloadProgress] = useState<DiffusionDownloadProgress | null>(null);
   const [result, setResult] = useState<VideoGenerationResult | null>(null);
 
+  const [narration, setNarration] = useState("");
+  const [voices, setVoices] = useState<OfflineVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [speechRate, setSpeechRate] = useState(1);
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [postProcessing, setPostProcessing] = useState(false);
+  const [cancellingStudio, setCancellingStudio] = useState(false);
+  const [studioProgress, setStudioProgress] = useState<VideoStudioPipelineProgress | null>(null);
+  const [finalVideo, setFinalVideo] = useState<VideoStudioPostProcessResult | null>(null);
+
   const refresh = useCallback(async () => {
     setChecking(true);
     try {
@@ -96,7 +165,40 @@ export default function VideoScreen() {
     }
   }, []);
 
+  const refreshVoices = useCallback(async () => {
+    if (!videoStudioAvailable()) {
+      setVoices([]);
+      setSelectedVoice(null);
+      setVoiceError("Este build ainda não inclui o módulo Android de dublagem.");
+      return;
+    }
+    setVoiceLoading(true);
+    setVoiceError(null);
+    try {
+      const list = await getOfflineVoices("pt-BR");
+      setVoices(list);
+      setSelectedVoice((current) => {
+        if (current && list.some((voice) => voice.name === current)) return current;
+        return list[0]?.name ?? null;
+      });
+      if (list.length === 0) {
+        setVoiceError("Nenhuma voz PT-BR offline instalada.");
+      }
+    } catch (error) {
+      setVoices([]);
+      setSelectedVoice(null);
+      setVoiceError(String(error));
+    } finally {
+      setVoiceLoading(false);
+    }
+  }, []);
+
   useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
+
+  useEffect(() => {
+    if (!result?.uri || !videoStudioAvailable()) return;
+    void refreshVoices();
+  }, [refreshVoices, result?.uri]);
 
   useEffect(() => {
     if (!diffusionAvailable()) return;
@@ -115,10 +217,10 @@ export default function VideoScreen() {
     setDownloadProgress(null);
     try {
       setStatus(await downloadVideoModel());
-      Alert.alert("Wan ready", "Saient verified and installed the Wan2.1 mobile pack.");
+      Alert.alert("Wan pronto", "O pacote móvel Wan2.1 foi verificado e instalado.");
     } catch (error) {
       if (!String(error).toLocaleLowerCase().includes("cancel")) {
-        Alert.alert("Could not download Wan", String(error));
+        Alert.alert("Não foi possível baixar o Wan", String(error));
       }
       await refresh();
     } finally {
@@ -129,16 +231,18 @@ export default function VideoScreen() {
 
   const generate = useCallback(async () => {
     if (!status?.valid || !status.active) {
-      Alert.alert("Wan model needed", status?.valid ? "Activate the Wan model first." : "Download the Wan2.1 model pack first.");
+      Alert.alert("Modelo Wan necessário", status?.valid ? "Ative o modelo Wan primeiro." : "Baixe o pacote Wan2.1 primeiro.");
       return;
     }
     if (!prompt.trim()) {
-      Alert.alert("Prompt needed", "Describe the motion you want Wan to create.");
+      Alert.alert("Prompt necessário", "Descreva o movimento que o Wan deve criar.");
       return;
     }
     setGenerating(true);
     setProgress(null);
     setResult(null);
+    setFinalVideo(null);
+    setStudioProgress(null);
     try {
       setResult(await generateLocalVideo({
         prompt: prompt.trim(),
@@ -150,7 +254,7 @@ export default function VideoScreen() {
       }));
     } catch (error) {
       if (!String(error).toLocaleLowerCase().includes("cancel")) {
-        Alert.alert("Video generation failed", String(error));
+        Alert.alert("Falha na geração do vídeo", String(error));
       }
     } finally {
       setGenerating(false);
@@ -158,11 +262,80 @@ export default function VideoScreen() {
     }
   }, [frames, negativePrompt, prompt, seed, status?.active, status?.valid, steps]);
 
+  const dubAndExport = useCallback(async () => {
+    if (!result) return;
+    if (!videoStudioAvailable()) {
+      Alert.alert("Video Studio indisponível", "Este build não contém o módulo Android de dublagem e exportação.");
+      return;
+    }
+    if (!narration.trim()) {
+      Alert.alert("Dublagem PT-BR", "Digite a fala que será dublada.");
+      return;
+    }
+    if (!selectedVoice || voices.length === 0) {
+      Alert.alert("Voz offline necessária", "Instale ou atualize uma voz PT-BR offline e toque em Atualizar vozes.");
+      return;
+    }
+
+    setPostProcessing(true);
+    setCancellingStudio(false);
+    setStudioProgress(null);
+    setFinalVideo(null);
+    try {
+      const output = await runVideoStudioPostProcess({
+        videoUri: result.uri,
+        videoDurationMs: result.frames / result.fps * 1000,
+        narration: narration.trim(),
+        locale: "pt-BR",
+        voiceName: selectedVoice ?? undefined,
+        speechRate,
+        captionsEnabled,
+        outputName: `saient-${Date.now()}`,
+        onProgress: setStudioProgress,
+      }, {
+        synthesizeSpeechSegment,
+        exportDubbedVideo,
+        promoteVideoStudioExport,
+        cleanupSynthesizedSegments,
+      });
+      setFinalVideo(output);
+      if (output.cleanupWarning) {
+        Alert.alert("Vídeo salvo", `O MP4 foi criado, mas a limpeza temporária informou: ${output.cleanupWarning}`);
+      }
+    } catch (error) {
+      const message = String(error);
+      if (!message.toLocaleLowerCase().includes("cancel")) {
+        Alert.alert("Falha ao dublar/exportar", message);
+      }
+    } finally {
+      setPostProcessing(false);
+      setCancellingStudio(false);
+    }
+  }, [captionsEnabled, narration, result, selectedVoice, speechRate, voices.length]);
+
+  const cancelStudio = useCallback(async () => {
+    const phase = studioProgress?.phase;
+    if (!postProcessing || cancellingStudio) return;
+    if (phase !== "synthesizing" && phase !== "exporting") return;
+    setCancellingStudio(true);
+    try {
+      if (phase === "synthesizing") {
+        await cancelSpeechSynthesis();
+      } else {
+        await cancelVideoExport();
+      }
+    } finally {
+      setCancellingStudio(false);
+    }
+  }, [cancellingStudio, postProcessing, studioProgress?.phase]);
+
   const downloadFraction = downloadProgress && downloadProgress.totalBytes > 0
     ? downloadProgress.completedBytes / downloadProgress.totalBytes
     : 0;
   const generationFraction = progress && progress.total > 0 ? progress.completed / progress.total : 0;
-  const busy = downloading || generating;
+  const studioPhase = studioProgress?.phase;
+  const studioCancellable = studioPhase === "synthesizing" || studioPhase === "exporting";
+  const busy = downloading || generating || postProcessing;
 
   return (
     <ScrollView
@@ -173,7 +346,7 @@ export default function VideoScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.h1}>Video</Text>
-          <Text style={styles.sub}>Wan2.1 T2V 1.3B · local Vulkan experiment</Text>
+          <Text style={styles.sub}>Wan2.1 local · dublagem e legendas PT-BR</Text>
         </View>
         <View style={[styles.state, status?.active ? styles.stateReady : styles.stateWaiting]}>
           <Ionicons name={status?.active ? "checkmark-circle" : "flask-outline"} size={15} color={status?.active ? C.green : C.amber} />
@@ -295,14 +468,132 @@ export default function VideoScreen() {
               <Ionicons name="stop-circle-outline" size={19} color={C.red} /><Text style={styles.dangerText}>{cancelling ? "Stopping…" : "Cancel generation"}</Text>
             </Pressable>
           ) : (
-            <Pressable style={[styles.generateButton, (!prompt.trim() || !status.active) && styles.disabled]} disabled={!prompt.trim() || !status.active} onPress={() => { void generate(); }}>
+            <Pressable style={[styles.generateButton, (!prompt.trim() || !status.active || postProcessing) && styles.disabled]} disabled={!prompt.trim() || !status.active || postProcessing} onPress={() => { void generate(); }}>
               <Ionicons name="videocam" size={19} color={C.bg} /><Text style={styles.generateText}>Generate on phone</Text>
             </Pressable>
+          )}
+
+          {result && !generating && (
+            <View style={styles.studioCard}>
+              <View style={styles.studioHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.studioTitle}>Dublagem PT-BR</Text>
+                  <Text style={styles.studioSub}>Offline · sem créditos · voz do Android</Text>
+                </View>
+                <Ionicons name="mic-outline" size={22} color={C.accent} />
+              </View>
+
+              <Text style={styles.label}>Fala</Text>
+              <TextInput
+                style={styles.narration}
+                value={narration}
+                onChangeText={setNarration}
+                editable={!postProcessing}
+                multiline
+                maxLength={1500}
+                placeholder="Digite a fala em português que deve entrar no vídeo…"
+                placeholderTextColor={C.text3}
+              />
+              <Text style={styles.durationHint}>
+                Vídeo bruto: {(result.frames / result.fps).toFixed(2)}s. A fala precisa caber nesse tempo.
+              </Text>
+
+              <View style={styles.rowBetween}>
+                <Text style={styles.label}>Voz offline PT-BR</Text>
+                <Pressable style={styles.refreshVoice} disabled={voiceLoading || postProcessing} onPress={() => { void refreshVoices(); }}>
+                  <Ionicons name="refresh" size={14} color={C.accent} />
+                  <Text style={styles.actionText}>{voiceLoading ? "Buscando…" : "Atualizar vozes"}</Text>
+                </Pressable>
+              </View>
+
+              {voices.length > 0 ? (
+                <View style={styles.voiceGrid}>
+                  {voices.slice(0, 8).map((voice) => (
+                    <Pressable
+                      key={voice.name}
+                      style={[styles.voiceButton, selectedVoice === voice.name && styles.voiceButtonOn]}
+                      disabled={postProcessing}
+                      onPress={() => setSelectedVoice(voice.name)}
+                    >
+                      <Ionicons name={selectedVoice === voice.name ? "radio-button-on" : "radio-button-off"} size={15} color={selectedVoice === voice.name ? C.accent : C.text3} />
+                      <Text style={[styles.voiceText, selectedVoice === voice.name && { color: C.text }]} numberOfLines={1}>{voice.name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.voiceEmpty}>{voiceLoading ? "Procurando vozes PT-BR offline…" : "Nenhuma voz PT-BR offline instalada."}</Text>
+              )}
+              {!!voiceError && <Text style={styles.voiceError}>{voiceError}</Text>}
+
+              <Text style={styles.label}>Velocidade da voz</Text>
+              <View style={styles.presets}>
+                {SPEECH_RATE_PRESETS.map((preset) => (
+                  <Pressable
+                    key={preset.value}
+                    style={[styles.preset, speechRate === preset.value && styles.presetOn]}
+                    disabled={postProcessing}
+                    onPress={() => setSpeechRate(preset.value)}
+                  >
+                    <Text style={[styles.presetLabel, speechRate === preset.value && { color: C.accent }]}>{preset.label}</Text>
+                    <Text style={styles.presetMeta}>{preset.value.toFixed(2)}×</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.toggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.toggleTitle}>Legendas</Text>
+                  <Text style={styles.toggleSub}>Queimadas no MP4 e sincronizadas com a dublagem.</Text>
+                </View>
+                <Switch
+                  value={captionsEnabled}
+                  onValueChange={setCaptionsEnabled}
+                  disabled={postProcessing}
+                />
+              </View>
+
+              {postProcessing && (
+                <View style={styles.studioProgressCard}>
+                  <View style={styles.progressTop}>
+                    <Text style={styles.progressLabel}>{phaseLabel(studioPhase)}</Text>
+                    {studioProgress?.total ? <Text style={styles.progressPct}>{studioProgress.completed ?? 0}/{studioProgress.total}</Text> : null}
+                  </View>
+                  <Text style={styles.progressHint}>Processamento local no aparelho. Nenhum crédito é consumido.</Text>
+                </View>
+              )}
+
+              {postProcessing && studioCancellable ? (
+                <Pressable
+                  style={[styles.cancelButton, cancellingStudio && styles.disabled]}
+                  disabled={cancellingStudio}
+                  onPress={() => { void cancelStudio(); }}
+                >
+                  <Ionicons name="stop-circle-outline" size={19} color={C.red} />
+                  <Text style={styles.dangerText}>{cancellingStudio ? "Cancelando…" : "Cancelar dublagem/exportação"}</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={[styles.studioButton, (!narration.trim() || !selectedVoice || postProcessing) && styles.disabled]}
+                  disabled={!narration.trim() || !selectedVoice || postProcessing}
+                  onPress={() => { void dubAndExport(); }}
+                >
+                  <Ionicons name="sparkles" size={19} color={C.bg} />
+                  <Text style={styles.generateText}>Dublar e exportar</Text>
+                </Pressable>
+              )}
+
+              {finalVideo && (
+                <>
+                  <Text style={styles.finalLabel}>Video final</Text>
+                  <FinalVideo result={finalVideo} />
+                </>
+              )}
+            </View>
           )}
         </>
       )}
 
-      <Text style={styles.foot}>Experimental: Saient drives a pinned stable-diffusion.cpp/ggml Wan backend locally. No cloud inference and no Vercel.</Text>
+      <Text style={styles.foot}>Wan, dublagem PT-BR e exportação rodam localmente. Sem inferência em nuvem e sem créditos por geração.</Text>
     </ScrollView>
   );
 }
@@ -344,12 +635,13 @@ const styles = StyleSheet.create({
   actionText: { color: C.accent, fontSize: 12, fontWeight: "700" },
   progressCard: { marginTop: 18, backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 14 },
   progressTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  progressLabel: { color: C.text, fontSize: 13, fontWeight: "700" },
-  progressPct: { color: C.accent, fontSize: 12, fontFamily: "monospace" },
+  progressLabel: { color: C.text, fontSize: 13, fontWeight: "700", flex: 1 },
+  progressPct: { color: C.accent, fontSize: 12, fontFamily: "monospace", marginLeft: 8 },
   track: { height: 7, backgroundColor: C.bg3, borderRadius: 4, overflow: "hidden", marginTop: 10 },
   fill: { height: 7, backgroundColor: C.accent, borderRadius: 4 },
   progressHint: { color: C.text3, fontSize: 10, lineHeight: 15, marginTop: 9, textAlign: "center" },
   resultCard: { marginTop: 18, overflow: "hidden", backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 14 },
+  finalCard: { borderColor: C.green },
   video: { width: "100%", aspectRatio: 416 / 240, backgroundColor: C.bg3 },
   resultBottom: { flexDirection: "row", alignItems: "center", gap: 7, padding: 12 },
   resultMeta: { color: C.text2, fontSize: 11, flex: 1 },
@@ -358,6 +650,26 @@ const styles = StyleSheet.create({
   cancelButton: { minHeight: 50, marginTop: 18, borderRadius: 13, borderWidth: 1, borderColor: C.red, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   textButton: { alignSelf: "center", minHeight: 38, justifyContent: "center", marginTop: 6, paddingHorizontal: 12 },
   dangerText: { color: C.red, fontSize: 14, fontWeight: "700" },
+  studioCard: { marginTop: 18, padding: 14, borderRadius: 14, backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border },
+  studioHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 2 },
+  studioTitle: { color: C.text, fontSize: 17, fontWeight: "800" },
+  studioSub: { color: C.text3, fontSize: 10, marginTop: 2 },
+  narration: { minHeight: 92, color: C.text, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, borderRadius: 11, padding: 12, fontSize: 14, textAlignVertical: "top" },
+  durationHint: { color: C.amber, fontSize: 10, lineHeight: 15, marginTop: 7 },
+  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
+  refreshVoice: { minHeight: 34, flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, marginTop: 6 },
+  voiceGrid: { gap: 7 },
+  voiceButton: { minHeight: 42, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, borderRadius: 9 },
+  voiceButtonOn: { borderColor: C.accent, backgroundColor: "rgba(124,92,255,0.10)" },
+  voiceText: { color: C.text2, fontSize: 11, flex: 1 },
+  voiceEmpty: { color: C.text3, fontSize: 11, lineHeight: 17, paddingVertical: 8 },
+  voiceError: { color: C.amber, fontSize: 10, lineHeight: 15, marginTop: 5 },
+  toggleRow: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, padding: 11, backgroundColor: C.bg3, borderRadius: 10, borderWidth: 1, borderColor: C.border },
+  toggleTitle: { color: C.text, fontSize: 13, fontWeight: "700" },
+  toggleSub: { color: C.text3, fontSize: 10, lineHeight: 15, marginTop: 2 },
+  studioProgressCard: { marginTop: 14, backgroundColor: C.bg3, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 12 },
+  studioButton: { minHeight: 52, marginTop: 16, borderRadius: 13, backgroundColor: C.accent, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  finalLabel: { color: C.green, fontSize: 13, fontWeight: "800", marginTop: 18 },
   foot: { color: C.text3, fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 20 },
   disabled: { opacity: 0.45 },
 });
