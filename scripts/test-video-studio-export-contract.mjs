@@ -28,7 +28,7 @@ for (const shape of [
 
 const gradle = fs.readFileSync(gradlePath, "utf8");
 for (const artifact of ["media3-transformer", "media3-effect", "media3-common"]) {
-  assert.match(gradle, new RegExp(`androidx\\.media3:${artifact}:1\\.11\\.1`), `${artifact} must be pinned to 1.11.1`);
+  assert.match(gradle, new RegExp(`androidx\\.media3:${artifact}:1\\.8\\.0`), `${artifact} must match expo-video Media3 1.8.0`);
 }
 assert.match(gradle, /JavaVersion\.VERSION_1_8/);
 
@@ -43,6 +43,7 @@ for (const token of [
   "OverlayEffect",
   "TextOverlay",
   "addGap",
+  "experimentalSetForceAudioTrack",
   "MimeTypes.AUDIO_AAC",
   "MimeTypes.VIDEO_H264",
   "MediaMetadataRetriever",
