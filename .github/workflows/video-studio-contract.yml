@@ -14,6 +14,7 @@ on:
       - 'scripts/test-video-studio-export-contract.mjs'
       - 'scripts/test-video-studio-storage-contract.mjs'
       - 'scripts/test-video-studio-pipeline.mjs'
+      - 'scripts/test-video-studio-cancel.mjs'
       - 'scripts/test-video-studio-ui-contract.mjs'
       - 'app.json'
       - 'package.json'
@@ -47,6 +48,9 @@ jobs:
 
       - name: Test post-process pipeline contract
         run: npm run test:video-studio-pipeline
+
+      - name: Test post-process cancellation contract
+        run: npm run test:video-studio-cancel
 
       - name: Test PT-BR dubbing UI contract
         run: npm run test:video-studio-ui
