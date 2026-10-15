@@ -20,6 +20,7 @@ on:
       - 'scripts/apply-chat-ptbr-runtime.mjs'
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
+      - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-video-studio.mjs'
       - 'scripts/test-video-studio-native-contract.mjs'
       - 'scripts/test-video-studio-export-contract.mjs'
@@ -61,6 +62,9 @@ jobs:
 
       - name: Test existing Wan generation contract
         run: npm run test:wan
+
+      - name: Test Wan performance contract
+        run: npm run test:wan-performance
 
       - name: Test PT-BR narration and caption contracts
         run: npm run test:video-studio
