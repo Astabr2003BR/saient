@@ -13,6 +13,7 @@
     "doctor": "expo-doctor",
     "test:models": "node --no-warnings --experimental-strip-types scripts/test-model-support.mjs",
     "test:wan": "node scripts/test-wan-contract.mjs",
+    "test:video-studio": "node --no-warnings --experimental-strip-types scripts/test-video-studio.mjs",
     "android:release": "bash scripts/build-android-release.sh",
     "android:signing:init": "bash scripts/init-android-signing.sh"
   },
