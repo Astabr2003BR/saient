@@ -37,7 +37,7 @@ assert.match(source, /cancelVideoExport\(\)/);
 assert.match(source, /Dublagem PT-BR/);
 assert.match(source, /Legendas/);
 assert.match(source, /Dublar e exportar/);
-assert.match(source, /Nenhuma voz PT-BR offline/);
+assert.match(source, /Nenhuma voz PT-BR sem internet/);
 assert.match(source, /Vídeo final/);
 
 const forbiddenEnglishUi = [
