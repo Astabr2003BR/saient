@@ -51,7 +51,7 @@ for (const token of [
   assert.ok(kotlin.includes(token), `missing export implementation token: ${token}`);
 }
 assert.match(kotlin, /narrationDurationMs\s*>\s*videoDurationMs/);
-assert.match(kotlin, /transformer\.cancel\(\)/);
+assert.match(kotlin, /transformer\?*\.cancel\(\)/);
 assert.match(kotlin, /\.mp4/);
 assert.match(kotlin, /delete\(\)/);
 
