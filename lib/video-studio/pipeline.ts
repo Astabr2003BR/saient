@@ -23,6 +23,7 @@ export type VideoStudioPostProcessOptions = {
   captionsEnabled?: boolean;
   outputName: string;
   gapMs?: number;
+  signal?: AbortSignal;
   onProgress?: (event: VideoStudioPipelineProgress) => void;
 };
 
@@ -64,6 +65,8 @@ export type VideoStudioPipelineDependencies = {
     fileBytes: number;
   }>;
   cleanupSynthesizedSegments(uris: string[]): Promise<PipelineCleanupResult>;
+  cancelSpeechSynthesis?(): Promise<boolean>;
+  cancelVideoExport?(): Promise<boolean>;
 };
 
 export type VideoStudioPostProcessResult = {
@@ -84,10 +87,15 @@ function validateOptions(options: VideoStudioPostProcessOptions) {
   if (!Number.isFinite(options.videoDurationMs) || options.videoDurationMs <= 0) {
     throw new RangeError("Video duration must be a positive finite number.");
   }
+  if (!options.outputName.trim()) throw new Error("Output name is empty.");
   const speechRate = options.speechRate ?? 1;
   if (!Number.isFinite(speechRate) || speechRate < 0.5 || speechRate > 2) {
     throw new RangeError("Speech rate must be between 0.5 and 2.0.");
   }
+}
+
+function cancellationError() {
+  return new Error("Video Studio post-process cancelled.");
 }
 
 export async function runVideoStudioPostProcess(
@@ -108,8 +116,38 @@ export async function runVideoStudioPostProcess(
   let result: VideoStudioPostProcessResult | undefined;
   let operationError: unknown;
 
+  const throwIfCancelled = () => {
+    if (options.signal?.aborted) throw cancellationError();
+  };
+
+  const cancelNativeWork = () => {
+    try {
+      if (dependencies.cancelSpeechSynthesis) {
+        void dependencies.cancelSpeechSynthesis().catch(() => false);
+      }
+    } catch {
+      // Cancellation is best-effort; the AbortSignal remains authoritative.
+    }
+    try {
+      if (dependencies.cancelVideoExport) {
+        void dependencies.cancelVideoExport().catch(() => false);
+      }
+    } catch {
+      // Cancellation is best-effort; the AbortSignal remains authoritative.
+    }
+  };
+
+  const onAbort = () => cancelNativeWork();
+  if (options.signal) {
+    if (options.signal.aborted) onAbort();
+    else options.signal.addEventListener("abort", onAbort, { once: true });
+  }
+
   try {
+    throwIfCancelled();
+
     for (let index = 0; index < segments.length; index += 1) {
+      throwIfCancelled();
       options.onProgress?.({ phase: "synthesizing", completed: index, total: segments.length });
       const item = await dependencies.synthesizeSpeechSegment({
         text: segments[index].text,
@@ -123,6 +161,7 @@ export async function runVideoStudioPostProcess(
       }
       synthesized.push(item);
       tempUris.push(item.uri);
+      throwIfCancelled();
       options.onProgress?.({ phase: "synthesizing", completed: index + 1, total: segments.length });
     }
 
@@ -147,6 +186,7 @@ export async function runVideoStudioPostProcess(
       ? timeline.map(({ text, startMs, endMs }) => ({ text, startMs, endMs }))
       : [];
 
+    throwIfCancelled();
     options.onProgress?.({ phase: "exporting" });
     const draft = await dependencies.exportDubbedVideo({
       videoUri: options.videoUri,
@@ -154,10 +194,12 @@ export async function runVideoStudioPostProcess(
       captions,
       outputName: options.outputName,
     });
+    throwIfCancelled();
     if (!draft.uri?.trim()) throw new Error("Video export returned an empty URI.");
 
     options.onProgress?.({ phase: "promoting" });
     const promoted = await dependencies.promoteVideoStudioExport(draft.uri, options.outputName);
+    throwIfCancelled();
     if (!promoted.uri?.trim()) throw new Error("Persistent video promotion returned an empty URI.");
     if (!Number.isFinite(promoted.fileBytes) || promoted.fileBytes <= 0) {
       throw new Error("Persistent video promotion returned an invalid file size.");
@@ -186,6 +228,7 @@ export async function runVideoStudioPostProcess(
         }
       }
     }
+    options.signal?.removeEventListener("abort", onAbort);
   }
 
   if (!result) throw new Error("Video Studio pipeline ended without a result.");
