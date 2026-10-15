@@ -48,8 +48,8 @@ replaceRequired(
 
 replaceRequired(
   "app/(tabs)/index.tsx",
-  '{ text: "Delete",',
-  '{ text: "Excluir",',
+  'text: "Delete",',
+  'text: "Excluir",',
 );
 
 replaceRequired(
