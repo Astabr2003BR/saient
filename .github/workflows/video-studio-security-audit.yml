@@ -1,0 +1,31 @@
+name: Video Studio Production Dependency Audit
+
+on:
+  push:
+    branches:
+      - feat/ptbr-video-studio
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/video-studio-security-audit.yml'
+  workflow_dispatch:
+
+jobs:
+  audit-production-critical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Audit production dependencies for critical vulnerabilities
+        run: npm audit --omit=dev --audit-level=critical
