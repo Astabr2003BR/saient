@@ -15,6 +15,7 @@ on:
       - 'modules/saient-video-studio/**'
       - 'modules/saient-diffusion/**'
       - 'plugins/withTextToSpeechQueries.js'
+      - 'scripts/apply-ptbr-localization.mjs'
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-video-studio.mjs'
       - 'scripts/test-video-studio-native-contract.mjs'
@@ -29,18 +30,29 @@ on:
       - '.github/workflows/video-studio-contract.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 22
+
+      - name: Apply deterministic PT-BR localization
+        run: node scripts/apply-ptbr-localization.mjs
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Test existing Wan generation contract
         run: npm run test:wan
@@ -68,3 +80,19 @@ jobs:
 
       - name: Test full PT-BR UI localization contract
         run: npm run test:ptbr-ui
+
+      - name: Typecheck localized sources
+        run: npm run typecheck
+
+      - name: Commit verified PT-BR localization
+        run: |
+          set -Eeuo pipefail
+          if git diff --quiet -- app components; then
+            echo "No localization changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app components
+          git commit -m "fix: complete PT-BR interface localization"
+          git push origin HEAD:feat/ptbr-video-studio
