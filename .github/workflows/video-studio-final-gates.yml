@@ -1,0 +1,111 @@
+name: Video Studio Final Gates
+
+on:
+  push:
+    branches:
+      - feat/ptbr-video-studio
+    paths:
+      - '.github/workflows/video-studio-final-gates.yml'
+  workflow_dispatch:
+
+jobs:
+  functional:
+    name: Functional + TypeScript + Wan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Narration and caption contracts
+        run: npm run test:video-studio
+
+      - name: Offline PT-BR TTS contract
+        run: npm run test:video-studio-native
+
+      - name: Dubbed MP4 export contract
+        run: npm run test:video-studio-export
+
+      - name: Persistent storage contract
+        run: npm run test:video-studio-storage
+
+      - name: Post-process pipeline contract
+        run: npm run test:video-studio-pipeline
+
+      - name: Cancellation contract
+        run: npm run test:video-studio-cancel
+
+      - name: PT-BR UI contract
+        run: npm run test:video-studio-ui
+
+      - name: Existing Wan contract
+        run: npm run test:wan
+
+      - name: TypeScript
+        run: npm run typecheck
+
+  security:
+    name: Production dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Audit production dependencies at critical severity
+        run: npm audit --omit=dev --audit-level=critical
+
+  android:
+    name: Full Android compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install --non-interactive
+
+      - name: Compile release Kotlin
+        working-directory: android
+        env:
+          SAIENT_ALLOW_DEBUG_RELEASE: 'true'
+        run: ./gradlew :app:compileReleaseKotlin --stacktrace --no-daemon
