@@ -13,28 +13,28 @@ type Step = {
 const STEPS: Step[] = [
   {
     icon: "phone-portrait-outline",
-    title: "Your AI, on your phone",
-    body: "Saient runs a full AI model entirely on this device. 100% offline — no cloud, no API keys, and nothing you type ever leaves your phone.",
+    title: "Sua IA, no seu celular",
+    body: "O Saient executa um modelo completo de IA diretamente neste aparelho. 100% offline — sem nuvem, sem chave de API e nada do que você digita sai do seu celular.",
   },
   {
     icon: "cube-outline",
-    title: "Download a model",
-    body: "Open the Models tab and tap Get on a model to download it. It’s stored on your phone and powers every reply. You can swap models any time.",
+    title: "Baixe um modelo",
+    body: "Abra a aba Modelos e toque em Baixar em um modelo. Ele fica salvo no seu celular e é usado nas respostas. Você pode trocar de modelo quando quiser.",
   },
   {
     icon: "chatbubble-ellipses-outline",
-    title: "Just start chatting",
-    body: "Type on the Chat tab and Saient answers on-device — so it keeps working in airplane mode, on the train, anywhere.",
+    title: "É só começar a conversar",
+    body: "Digite na aba Chat e o Saient responde no próprio aparelho. Assim ele continua funcionando até no modo avião, no ônibus ou em qualquer lugar.",
   },
   {
     icon: "construct-outline",
-    title: "Let it act for you",
-    body: "Turn on Agent in the chat header to have Saient text or call the people you ask it to. It always shows you the message and asks before sending.",
+    title: "Deixe a IA agir por você",
+    body: "Ative o modo Agente no topo do chat para o Saient preparar mensagens ou chamadas para as pessoas que você pedir. Ele sempre mostra o conteúdo e pede sua confirmação antes de enviar.",
   },
   {
     icon: "battery-charging-outline",
-    title: "Save battery when idle",
-    body: "Done for now? Tap Unload on the Models tab to free the model from memory. Tap Load to bring it back in a couple of seconds.",
+    title: "Economize bateria quando não estiver usando",
+    body: "Terminou por enquanto? Toque em Descarregar na aba Modelos para liberar o modelo da memória. Toque em Carregar para ativá-lo novamente em poucos segundos.",
   },
 ];
 
@@ -61,14 +61,14 @@ export function SetupWizard({
       <View style={[styles.root, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 20 }]}>
         <View style={styles.topRow}>
           {i > 0 ? (
-            <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
+            <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="Voltar">
               <Ionicons name="chevron-back" size={26} color={C.text2} />
             </Pressable>
           ) : (
             <View style={styles.backSpacer} />
           )}
-          <Pressable onPress={() => onDone(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Skip setup">
-            <Text style={styles.skip}>Skip</Text>
+          <Pressable onPress={() => onDone(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Pular configuração">
+            <Text style={styles.skip}>Pular</Text>
           </Pressable>
         </View>
 
@@ -87,7 +87,7 @@ export function SetupWizard({
         </View>
 
         <Pressable style={styles.cta} onPress={next} accessibilityRole="button">
-          <Text style={styles.ctaText}>{last ? "Get started" : "Next"}</Text>
+          <Text style={styles.ctaText}>{last ? "Começar" : "Próximo"}</Text>
           {!last && <Ionicons name="arrow-forward" size={18} color={C.bg} />}
         </Pressable>
       </View>
