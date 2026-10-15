@@ -45,4 +45,6 @@ jobs:
 
       - name: Compile release Kotlin
         working-directory: android
+        env:
+          SAIENT_ALLOW_DEBUG_RELEASE: 'true'
         run: ./gradlew :app:compileReleaseKotlin --stacktrace --no-daemon
