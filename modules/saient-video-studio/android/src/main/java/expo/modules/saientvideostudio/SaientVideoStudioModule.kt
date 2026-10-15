@@ -15,7 +15,6 @@ import expo.modules.kotlin.records.Record
 import java.io.File
 import java.util.Locale
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CompletableDeferred
@@ -76,25 +75,19 @@ class SaientVideoStudioModule : Module() {
     requireNotNull(appContext.reactContext) { "Android context is unavailable." }
 
   private suspend fun createTts(): TextToSpeech = withContext(Dispatchers.Main.immediate) {
-    suspendCancellableCoroutine { continuation ->
-      val holder = AtomicReference<TextToSpeech?>(null)
-      val tts = TextToSpeech(context()) { status ->
-        val instance = holder.get()
-        if (!continuation.isActive) {
-          instance?.shutdown()
-          return@TextToSpeech
-        }
-        if (status == TextToSpeech.SUCCESS && instance != null) {
-          continuation.resume(instance)
-        } else {
-          instance?.shutdown()
-          continuation.resumeWithException(
-            VideoStudioException("Android text-to-speech could not be initialized."),
-          )
-        }
+    val initialization = CompletableDeferred<Int>()
+    val tts = TextToSpeech(context()) { status ->
+      initialization.complete(status)
+    }
+    try {
+      val status = initialization.await()
+      if (status != TextToSpeech.SUCCESS) {
+        throw VideoStudioException("Android text-to-speech could not be initialized.")
       }
-      holder.set(tts)
-      continuation.invokeOnCancellation { holder.get()?.shutdown() }
+      tts
+    } catch (error: Throwable) {
+      tts.shutdown()
+      throw error
     }
   }
 
