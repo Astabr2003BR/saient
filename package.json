@@ -18,6 +18,7 @@
     "test:video-studio-export": "node scripts/test-video-studio-export-contract.mjs",
     "test:video-studio-storage": "node scripts/test-video-studio-storage-contract.mjs",
     "test:video-studio-pipeline": "node --no-warnings --experimental-strip-types scripts/test-video-studio-pipeline.mjs",
+    "test:video-studio-ui": "node scripts/test-video-studio-ui-contract.mjs",
     "android:release": "bash scripts/build-android-release.sh",
     "android:signing:init": "bash scripts/init-android-signing.sh"
   },
