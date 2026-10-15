@@ -50,7 +50,9 @@ for (const token of [
 ]) {
   assert.ok(kotlin.includes(token), `missing export implementation token: ${token}`);
 }
+assert.match(kotlin, /withContext\(Dispatchers\.Main\.immediate\)/, "Media3 lifecycle must run on Android main thread");
 assert.match(kotlin, /narrationDurationMs\s*>\s*videoDurationMs/);
+assert.match(kotlin, /start\(composition,\s*output\.absolutePath\)/);
 assert.match(kotlin, /transformer\?*\.cancel\(\)/);
 assert.match(kotlin, /\.mp4/);
 assert.match(kotlin, /delete\(\)/);
