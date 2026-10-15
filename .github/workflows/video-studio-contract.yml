@@ -12,6 +12,7 @@ on:
       - 'scripts/test-video-studio-native-contract.mjs'
       - 'scripts/test-video-studio-export-contract.mjs'
       - 'scripts/test-video-studio-storage-contract.mjs'
+      - 'scripts/test-video-studio-pipeline.mjs'
       - 'app.json'
       - 'package.json'
       - '.github/workflows/video-studio-contract.yml'
@@ -41,3 +42,6 @@ jobs:
 
       - name: Test persistent storage and TTS cleanup contract
         run: npm run test:video-studio-storage
+
+      - name: Test post-process pipeline contract
+        run: npm run test:video-studio-pipeline
