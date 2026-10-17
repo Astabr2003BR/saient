@@ -35,10 +35,10 @@ assert.match(manager, /vid_gen/,
   "Fast Manager must require video-generation capability");
 assert.match(manager, /process\.isAlive/,
   "Fast Manager must re-check process liveness instead of caching stale ready state");
-assert.match(manager, /--host[\s\S]*WAN_FAST_HOST/,
-  "server launch must explicitly bind to the fixed loopback host");
-assert.match(manager, /--port[\s\S]*WAN_FAST_PORT/,
-  "server launch must explicitly use the dedicated Fast Engine port");
+assert.match(manager, /--listen-ip[\s\S]*WAN_FAST_HOST/,
+  "server launch must explicitly bind to the pinned runtime's fixed loopback listen address");
+assert.match(manager, /--listen-port[\s\S]*WAN_FAST_PORT/,
+  "server launch must explicitly use the pinned runtime's dedicated listen port");
 
 assert.match(pause, /class WanChatPauseCoordinator/,
   "chat pause marker ownership must live in a shared coordinator");
