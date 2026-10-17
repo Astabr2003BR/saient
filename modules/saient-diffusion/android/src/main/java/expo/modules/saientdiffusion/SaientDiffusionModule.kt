@@ -51,6 +51,9 @@ private const val WAN_DEFAULT_NEGATIVE =
     "JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，" +
     "手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
 
+internal fun combineWanNegativePrompt(userNegative: String): String =
+  if (userNegative.isEmpty()) WAN_DEFAULT_NEGATIVE else "$WAN_DEFAULT_NEGATIVE，$userNegative"
+
 private data class RemoteModelFile(
   val path: String,
   val url: String,
@@ -226,6 +229,18 @@ class SaientDiffusionModule : Module() {
 
     AsyncFunction("setVideoModelActive") Coroutine { active: Boolean ->
       withContext(Dispatchers.IO) { changeVideoModelActive(active) }
+    }
+
+    AsyncFunction("generateFastLocalVideo") Coroutine { options: VideoGenerationOptions ->
+      withContext(Dispatchers.IO) {
+        wanFastManager.generate(options) { completed, total, detail ->
+          sendVideoProgress("denoising", "Processando $completed de $total", completed, total, detail)
+        }
+      }
+    }
+
+    AsyncFunction("cancelFastLocalVideo") Coroutine { ->
+      withContext(Dispatchers.IO) { wanFastManager.cancelGeneration() }
     }
 
     AsyncFunction("generateVideo") Coroutine { options: VideoGenerationOptions ->
