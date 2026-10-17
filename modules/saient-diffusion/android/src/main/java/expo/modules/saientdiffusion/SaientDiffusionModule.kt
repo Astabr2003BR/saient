@@ -1093,7 +1093,13 @@ class SaientDiffusionModule : Module() {
   private fun generateVideo(options: VideoGenerationOptions): Map<String, Any> {
     reserveWanGeneration()
     return try {
-      generateVideoReserved(options)
+      wanChatPauseCoordinatorLazy.value.acquire()
+      try {
+        wanFastManager.stop()
+        generateVideoReserved(options)
+      } finally {
+        wanChatPauseCoordinatorLazy.value.release()
+      }
     } finally {
       releaseWanGeneration()
     }
