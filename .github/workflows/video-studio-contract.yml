@@ -27,6 +27,7 @@ on:
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-wan-fast-build-contract.mjs'
+      - 'scripts/test-wan-fast-native-contract.mjs'
       - 'scripts/test-wan-fast-policy.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-wan-startup-diagnostics.mjs'
@@ -84,6 +85,9 @@ jobs:
 
       - name: Test Wan Fast build/package contract
         run: npm run test:wan-fast-build
+
+      - name: Test Wan Fast native lifecycle contract
+        run: npm run test:wan-fast-native
 
       - name: Test existing Wan generation contract
         run: npm run test:wan
