@@ -19,6 +19,7 @@ on:
       - 'scripts/apply-ptbr-localization.mjs'
       - 'scripts/apply-chat-ptbr-runtime.mjs'
       - 'scripts/apply-wan-performance.mjs'
+      - 'scripts/apply-wan-startup-diagnostics.mjs'
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
@@ -61,6 +62,9 @@ jobs:
 
       - name: Apply deterministic Wan performance profile
         run: node scripts/apply-wan-performance.mjs
+
+      - name: Apply Wan startup diagnostics
+        run: node scripts/apply-wan-startup-diagnostics.mjs
 
       - name: Install dependencies
         run: npm install
