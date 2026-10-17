@@ -122,6 +122,14 @@ class SaientDiffusionModule : Module() {
   @Volatile private var downloadCancellationRequested = false
   @Volatile private var activeDownloadConnection: HttpURLConnection? = null
 
+  private val wanChatPauseCoordinatorLazy = lazy {
+    WanChatPauseCoordinator(context()) { waitForChatEngineToStop() }
+  }
+  private val wanFastManagerLazy = lazy {
+    WanFastManager(context(), wanChatPauseCoordinatorLazy.value)
+  }
+  private val wanFastManager by wanFastManagerLazy
+
   override fun definition() = ModuleDefinition {
     Name("SaientDiffusion")
     Events("onProgress", "onVideoProgress", "onDownloadProgress")
@@ -187,6 +195,18 @@ class SaientDiffusionModule : Module() {
       withContext(Dispatchers.IO) { videoStatus() }
     }
 
+    AsyncFunction("getWanFastStatus") Coroutine { ->
+      withContext(Dispatchers.IO) { wanFastManager.status() }
+    }
+
+    AsyncFunction("startWanFastEngine") Coroutine { ->
+      withContext(Dispatchers.IO) { wanFastManager.start() }
+    }
+
+    AsyncFunction("stopWanFastEngine") Coroutine { ->
+      withContext(Dispatchers.IO) { wanFastManager.stop() }
+    }
+
     AsyncFunction("downloadVideoModel") Coroutine { ->
       withContext(Dispatchers.IO) { downloadVideoModel() }
     }
@@ -212,7 +232,17 @@ class SaientDiffusionModule : Module() {
       withContext(Dispatchers.IO) { generateVideo(options) }
     }
 
+    OnActivityEntersBackground {
+      if (wanFastManagerLazy.isInitialized()) {
+        Thread({ wanFastManager.stop() }, "saient-wan-fast-background-stop").apply {
+          isDaemon = true
+          start()
+        }
+      }
+    }
+
     OnDestroy {
+      if (wanFastManagerLazy.isInitialized()) wanFastManager.forceStop()
       synchronized(processLock) {
         cancellationRequested = true
         activeProcess?.destroyForcibly()
