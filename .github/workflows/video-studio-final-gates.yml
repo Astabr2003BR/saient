@@ -5,14 +5,29 @@ on:
     branches:
       - feat/ptbr-video-studio
     paths:
+      - 'app/(tabs)/video.tsx'
+      - 'lib/wan-fast/**'
+      - 'modules/saient-diffusion/**'
+      - 'modules/saient-video-studio/**'
+      - 'engine/arm64-v8a/**'
+      - 'engine/wan/**'
+      - 'plugins/quartz/**'
+      - 'plugins/withTextToSpeechQueries.js'
+      - 'scripts/build-wan-android.sh'
+      - 'scripts/test-wan-fast-*.mjs'
+      - 'scripts/test-wan-*.mjs'
+      - 'scripts/test-video-studio*.mjs'
+      - 'scripts/test-ptbr-ui-contract.mjs'
+      - 'app.json'
+      - 'package.json'
       - '.github/workflows/video-studio-final-gates.yml'
   workflow_dispatch:
 
 jobs:
   functional:
-    name: Functional + TypeScript + Wan
+    name: Functional + TypeScript + Wan Fast
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -25,6 +40,33 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Wan Fast policy
+        run: npm run test:wan-fast-policy
+
+      - name: Wan Fast build/package contract
+        run: npm run test:wan-fast-build
+
+      - name: Wan Fast native lifecycle
+        run: npm run test:wan-fast-native
+
+      - name: Wan Fast generation
+        run: npm run test:wan-fast-generation
+
+      - name: Wan Fast fallback
+        run: npm run test:wan-fast-fallback
+
+      - name: Wan Fast UI
+        run: npm run test:wan-fast-ui
+
+      - name: Existing Wan contract
+        run: npm run test:wan
+
+      - name: Wan performance contract
+        run: npm run test:wan-performance
+
+      - name: Wan startup diagnostics
+        run: npm run test:wan-startup-diagnostics
 
       - name: Narration and caption contracts
         run: npm run test:video-studio
@@ -50,9 +92,6 @@ jobs:
       - name: Full PT-BR interface contract
         run: npm run test:ptbr-ui
 
-      - name: Existing Wan contract
-        run: npm run test:wan
-
       - name: TypeScript
         run: npm run typecheck
 
@@ -77,7 +116,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=critical
 
   android:
-    name: Full Android compile
+    name: Full Android compile + engine packaging
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -106,6 +145,28 @@ jobs:
 
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install --non-interactive
+
+      - name: Verify generated engine payloads
+        run: |
+          set -Eeuo pipefail
+          test -s engine/arm64-v8a/libquartz.so
+          test -s android/app/src/main/jniLibs/arm64-v8a/libquartz.so
+          cmp engine/arm64-v8a/libquartz.so android/app/src/main/jniLibs/arm64-v8a/libquartz.so
+
+          test -s engine/arm64-v8a/libquartz-wan.so
+          test -s android/app/src/main/jniLibs/arm64-v8a/libquartz-wan.so
+          cmp engine/arm64-v8a/libquartz-wan.so android/app/src/main/jniLibs/arm64-v8a/libquartz-wan.so
+
+          test -s engine/arm64-v8a/libquartz-wan-fast.so
+          test -s android/app/src/main/jniLibs/arm64-v8a/libquartz-wan-fast.so
+          cmp engine/arm64-v8a/libquartz-wan-fast.so android/app/src/main/jniLibs/arm64-v8a/libquartz-wan-fast.so
+
+          file android/app/src/main/jniLibs/arm64-v8a/libquartz.so
+          file android/app/src/main/jniLibs/arm64-v8a/libquartz-wan.so
+          file android/app/src/main/jniLibs/arm64-v8a/libquartz-wan-fast.so
+          sha256sum android/app/src/main/jniLibs/arm64-v8a/libquartz.so \
+            android/app/src/main/jniLibs/arm64-v8a/libquartz-wan.so \
+            android/app/src/main/jniLibs/arm64-v8a/libquartz-wan-fast.so
 
       - name: Compile release Kotlin
         working-directory: android
