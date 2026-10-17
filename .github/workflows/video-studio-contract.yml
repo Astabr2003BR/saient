@@ -26,6 +26,7 @@ on:
       - 'scripts/apply-wan-startup-diagnostics.mjs'
       - 'scripts/apply-wan-fast-native.mjs'
       - 'scripts/apply-wan-fast-generation.mjs'
+      - 'scripts/apply-wan-fast-fallback.mjs'
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-wan-fast-build-contract.mjs'
@@ -86,6 +87,9 @@ jobs:
 
       - name: Apply Wan Fast generation bridge
         run: node scripts/apply-wan-fast-generation.mjs
+
+      - name: Apply Wan Fast fallback orchestration
+        run: node scripts/apply-wan-fast-fallback.mjs
 
       - name: Install dependencies
         run: npm install
