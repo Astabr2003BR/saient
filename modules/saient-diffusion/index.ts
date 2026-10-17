@@ -9,6 +9,8 @@ import SaientDiffusionModule, {
   type VideoProgress,
   type WanFastState,
   type WanFastStatus,
+  type WanGenerationTimings,
+  type WanFastVideoResult,
 } from "./src/SaientDiffusionModule";
 
 function requiredModule() {
@@ -94,6 +96,16 @@ export function stopWanFastEngine(): Promise<WanFastStatus> {
   return requiredModule().stopWanFastEngine();
 }
 
+export function generateFastLocalVideo(
+  options: VideoGenerationOptions,
+): Promise<WanFastVideoResult> {
+  return requiredModule().generateFastLocalVideo(options);
+}
+
+export function cancelFastLocalVideo(): Promise<boolean> {
+  return requiredModule().cancelFastLocalVideo();
+}
+
 export function addDiffusionProgressListener(listener: (event: DiffusionProgress) => void) {
   return requiredModule().addListener("onProgress", listener);
 }
@@ -119,4 +131,6 @@ export type {
   VideoProgress,
   WanFastState,
   WanFastStatus,
+  WanGenerationTimings,
+  WanFastVideoResult,
 };
