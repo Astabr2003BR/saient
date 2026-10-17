@@ -31,6 +31,15 @@ for (const required of [
 assert.match(native, /line\.take\(240\)/,
   "Wan startup diagnostics must surface a bounded latest native log line.");
 
+assert.doesNotMatch(native, /match\.groupValues\[2\]\.toInt\(\)\s*==\s*options\.steps/,
+  "native progress totals are internal engine units and must not be required to equal requested steps");
+assert.match(native, /progress\.find\(line\)/,
+  "native progress must be found inside a log line instead of requiring an exact whole-line match");
+assert.match(native, /val\s+total\s*=\s*match\.groupValues\[2\]\.toInt\(\)/,
+  "native progress must retain the engine-reported total");
+assert.match(native, /"Processando \$completed de \$total"\s*,\s*completed\s*,\s*total/,
+  "denoising progress must forward completed/total exactly as emitted by the engine");
+
 assert.match(ui, /progress\?\.message\s*\?\?\s*"Preparando Wan"/,
   "Video UI must show the exact native startup stage instead of a generic 0% label.");
 assert.match(ui, /progress\?\.phase\s*===\s*"denoising"/,
