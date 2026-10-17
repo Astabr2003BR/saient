@@ -67,6 +67,25 @@ export type VideoGenerationResult = {
   fps: number;
 };
 
+export type WanFastState =
+  | "stopped"
+  | "starting"
+  | "loading"
+  | "ready"
+  | "generating"
+  | "stopping"
+  | "failed";
+
+export type WanFastStatus = {
+  state: WanFastState;
+  available: boolean;
+  healthy: boolean;
+  sessionId?: string;
+  generationCount: number;
+  message: string;
+  lastError?: string;
+};
+
 type DiffusionEvents = {
   onProgress: (event: DiffusionProgress) => void;
   onVideoProgress: (event: VideoProgress) => void;
@@ -87,6 +106,9 @@ declare class SaientDiffusionModule extends NativeModule<DiffusionEvents> {
   removeVideoModel(): Promise<DiffusionStatus>;
   setVideoModelActive(active: boolean): Promise<DiffusionStatus>;
   generateVideo(options: VideoGenerationOptions): Promise<VideoGenerationResult>;
+  getWanFastStatus(): Promise<WanFastStatus>;
+  startWanFastEngine(): Promise<WanFastStatus>;
+  stopWanFastEngine(): Promise<WanFastStatus>;
 }
 
 export default requireOptionalNativeModule<SaientDiffusionModule>("SaientDiffusion");
