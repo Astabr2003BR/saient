@@ -1,0 +1,108 @@
+name: Wan Fast Native Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ptbr-video-studio
+    paths:
+      - 'scripts/build-wan-android.sh'
+      - 'engine/wan/saient-progress.patch'
+      - 'engine/wan/saient-server-progress.patch'
+      - '.github/workflows/wan-fast-native-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Saient
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Checkout pinned stable-diffusion.cpp
+        uses: actions/checkout@v7
+        with:
+          repository: leejet/stable-diffusion.cpp
+          ref: e31a86ce9110b11a98bd5990c329093244c2d1e3
+          submodules: recursive
+          path: .native/stable-diffusion.cpp
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android NDK 27.1
+        run: yes | sdkmanager 'ndk;27.1.12297006' >/dev/null
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvulkan-dev spirv-headers ripgrep ninja-build
+
+      - name: Build CLI fallback and persistent server
+        env:
+          SAIENT_SD_CPP_SOURCE: ${{ github.workspace }}/.native/stable-diffusion.cpp
+          SAIENT_ANDROID_NDK: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
+          SAIENT_BUILD_JOBS: '2'
+        run: bash scripts/build-wan-android.sh
+
+      - name: Verify ARM64 executable payloads
+        run: |
+          set -Eeuo pipefail
+          for f in engine/arm64-v8a/libquartz-wan.so engine/arm64-v8a/libquartz-wan-fast.so; do
+            test -s "$f"
+            file "$f" | tee /dev/stderr | grep -q 'ARM aarch64'
+            readelf -h "$f" | grep -q 'AArch64'
+          done
+          FAST_BYTES=$(stat -c '%s' engine/arm64-v8a/libquartz-wan-fast.so)
+          if [ "$FAST_BYTES" -ge 100000000 ]; then
+            echo "Fast Engine binary is ${FAST_BYTES} bytes; GitHub's single-file limit would reject it." >&2
+            exit 3
+          fi
+
+      - name: Record Fast Engine artifact evidence
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          binary = Path('engine/arm64-v8a/libquartz-wan-fast.so')
+          lock_path = Path('engine/wan/BACKEND_LOCK.json')
+          lock = json.loads(lock_path.read_text())
+          lock['fastArtifact'] = {
+              'path': '../arm64-v8a/libquartz-wan-fast.so',
+              'target': 'sd-server',
+              'bytes': binary.stat().st_size,
+              'sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
+          }
+          lock_path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + '\n')
+          print(json.dumps(lock['fastArtifact'], indent=2))
+          PY
+
+      - name: Upload native build evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: wan-fast-arm64-native
+          path: |
+            engine/arm64-v8a/libquartz-wan-fast.so
+            engine/wan/BACKEND_LOCK.json
+          if-no-files-found: error
+
+      - name: Commit verified Fast Engine binary
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add engine/arm64-v8a/libquartz-wan-fast.so engine/wan/BACKEND_LOCK.json
+          if git diff --cached --quiet; then
+            echo 'Verified Fast Engine binary already matches the branch.'
+            exit 0
+          fi
+          git commit -m 'build: add verified Wan Fast ARM64 runtime'
+          git push origin HEAD:feat/ptbr-video-studio
