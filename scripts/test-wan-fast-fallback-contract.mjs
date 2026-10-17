@@ -50,6 +50,20 @@ assert.match(smartTail, /"fallbackReason"/,
 assert.match(smartTail, /"timings"/,
   "fallback result must include timing metadata");
 
+const cliWrapperStart = module.indexOf("private fun generateVideo(options: VideoGenerationOptions)");
+assert.notEqual(cliWrapperStart, -1, "missing public CLI generation wrapper");
+const cliWrapperEnd = module.indexOf("private fun generateVideoReserved(", cliWrapperStart);
+assert.ok(cliWrapperEnd > cliWrapperStart, "missing reserved CLI generation helper after public wrapper");
+const cliWrapper = module.slice(cliWrapperStart, cliWrapperEnd);
+assert.match(cliWrapper, /wanChatPauseCoordinatorLazy\.value\.acquire\(\)/,
+  "direct CLI generation must hold the shared chat-pause lease before evicting a prewarmed Fast Engine");
+const directStopIndex = cliWrapper.indexOf("wanFastManager.stop()")
+const directCliIndex = cliWrapper.indexOf("generateVideoReserved(options)")
+assert.ok(directStopIndex >= 0 && directCliIndex > directStopIndex,
+  "direct CLI generation must stop any prewarmed Fast Engine before loading the CLI Wan context");
+assert.match(cliWrapper, /wanChatPauseCoordinatorLazy\.value\.release\(\)/,
+  "direct CLI generation must release the shared pause lease after completion");
+
 assert.match(types, /export type WanSmartVideoResult\s*=\s*VideoGenerationResult/,
   "TypeScript must expose the smart result contract");
 assert.match(types, /engineMode:\s*"fast"\s*\|\s*"cli-fallback"/,
