@@ -43,7 +43,7 @@ assert.ok(stopIndex >= 0 && cliIndex > stopIndex,
   "Fast Engine must stop and release its model/Vulkan context before CLI fallback starts");
 assert.match(smartTail, /wanChatPauseCoordinatorLazy\.value\.release\(\)/,
   "fallback transition must release the shared chat-pause lease");
-assert.match(smartTail, /"engineMode"\s+to\s+"cli-fallback"/,
+assert.match(smartTail, /fallback\["engineMode"\]\s*=\s*"cli-fallback"|"engineMode"\s+to\s+"cli-fallback"/,
   "fallback result must identify cli-fallback mode");
 assert.match(smartTail, /"fallbackReason"/,
   "fallback result must preserve a bounded Fast Engine failure reason");
