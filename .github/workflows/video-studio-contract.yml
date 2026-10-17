@@ -29,6 +29,7 @@ on:
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-wan-fast-build-contract.mjs'
       - 'scripts/test-wan-fast-native-contract.mjs'
+      - 'scripts/test-wan-fast-generation-contract.mjs'
       - 'scripts/test-wan-fast-policy.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-wan-startup-diagnostics.mjs'
@@ -92,6 +93,9 @@ jobs:
 
       - name: Test Wan Fast native lifecycle contract
         run: npm run test:wan-fast-native
+
+      - name: Test Wan Fast generation contract
+        run: npm run test:wan-fast-generation
 
       - name: Test existing Wan generation contract
         run: npm run test:wan
