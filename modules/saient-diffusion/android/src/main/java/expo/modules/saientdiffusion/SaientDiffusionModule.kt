@@ -1034,7 +1034,7 @@ class SaientDiffusionModule : Module() {
           throw DiffusionException("Video generation cancelled.", error)
         }
         val fallbackReason = error.message
-          ?.replace(Regex("\s+"), " ")
+          ?.replace(Regex("""\s+"""), " ")
           ?.trim()
           ?.take(240)
           ?.ifBlank { null }
