@@ -5,12 +5,13 @@
 // What it injects:
 //   1. engine binaries -> app/src/main/jniLibs/arm64-v8a/ (extracted to the
 //      exec-allowed nativeLibraryDir at install). libquartz.so hosts chat/SDXL;
-//      libquartz-wan.so is the pinned Vulkan Wan video worker.
+//      libquartz-wan.so is the pinned Vulkan Wan CLI fallback;
+//      libquartz-wan-fast.so is the pinned persistent Wan server.
 //   2. Kotlin sources (QuartzEngine.kt, QuartzService.kt) -> the app package
 //   3. MainApplication.onCreate -> start the foreground service
 //   4. AndroidManifest -> cleartext localhost, FGS permissions, the <service>
 //   5. gradle.properties -> useLegacyPackaging (extract the lib) + arm64-only
-//   6. app/build.gradle -> don't strip libquartz.so
+//   6. app/build.gradle -> don't strip executable engine payloads
 
 const {
   withDangerousMod,
@@ -34,7 +35,7 @@ const FGS_PERMISSIONS = [
   'android.permission.POST_NOTIFICATIONS',
 ];
 
-// 1. Copy the engine binary + Kotlin sources into the generated android project.
+// 1. Copy the engine binaries + Kotlin sources into the generated android project.
 const withNativeFiles = (config) =>
   withDangerousMod(config, [
     'android',
@@ -44,10 +45,12 @@ const withNativeFiles = (config) =>
 
       const binSrc = path.join(projectRoot, 'engine', 'arm64-v8a', 'libquartz.so');
       const wanBinSrc = path.join(projectRoot, 'engine', 'arm64-v8a', 'libquartz-wan.so');
+      const wanFastBinSrc = path.join(projectRoot, 'engine', 'arm64-v8a', 'libquartz-wan-fast.so');
       const jniDir = path.join(platformProjectRoot, 'app', 'src', 'main', 'jniLibs', 'arm64-v8a');
       fs.mkdirSync(jniDir, { recursive: true });
       fs.copyFileSync(binSrc, path.join(jniDir, 'libquartz.so'));
       fs.copyFileSync(wanBinSrc, path.join(jniDir, 'libquartz-wan.so'));
+      fs.copyFileSync(wanFastBinSrc, path.join(jniDir, 'libquartz-wan-fast.so'));
 
       const javaDir = path.join(platformProjectRoot, 'app', 'src', 'main', 'java', PACKAGE_DIR);
       fs.mkdirSync(javaDir, { recursive: true });
@@ -140,7 +143,7 @@ const withGradleProps = (config) =>
     return cfg;
   });
 
-// 5. app/build.gradle: keep both executable payloads unstripped.
+// 5. app/build.gradle: keep executable payloads unstripped.
 const withAppGradle = (config) =>
   withAppBuildGradle(config, (cfg) => {
     let src = cfg.modResults.contents;
@@ -154,6 +157,12 @@ const withAppGradle = (config) =>
       src = src.replace(
         /keepDebugSymbols \+= "\*\*\/libquartz\.so"\n/,
         (m) => m + '            keepDebugSymbols += "**/libquartz-wan.so"\n'
+      );
+    }
+    if (!src.includes('keepDebugSymbols += "**/libquartz-wan-fast.so"')) {
+      src = src.replace(
+        /keepDebugSymbols \+= "\*\*\/libquartz-wan\.so"\n/,
+        (m) => m + '            keepDebugSymbols += "**/libquartz-wan-fast.so"\n'
       );
     }
     if (APP_ID_SUFFIX && !src.includes('applicationIdSuffix')) {
