@@ -8,10 +8,15 @@
   "androidApi": 28,
   "backend": "Vulkan",
   "localPatch": "saient-progress.patch",
+  "serverPatch": "saient-server-progress.patch",
   "artifact": {
     "path": "../arm64-v8a/libquartz-wan.so",
     "bytes": 82749840,
     "sha256": "7f18eb1337e70bc69cbbd21adfe7a7bfe56401e50c33c7a41747104f6bfa49ca"
   },
-  "localPatchNotes": "newline-delimited progress for the Android bridge; CPU graph-cut segmented compute; free params-backend tensors after each graph; K-quant token embeddings via get_rows (avoids materialising the UMT5-XXL embedding matrix, -2.45GB peak RSS)"
+  "fastArtifact": {
+    "path": "../arm64-v8a/libquartz-wan-fast.so",
+    "target": "sd-server"
+  },
+  "localPatchNotes": "newline-delimited progress for CLI and persistent server Android bridges; CPU graph-cut segmented compute; free params-backend tensors after each graph; K-quant token embeddings via get_rows (avoids materialising the UMT5-XXL embedding matrix, -2.45GB peak RSS)"
 }
