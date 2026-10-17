@@ -27,6 +27,7 @@ on:
       - 'scripts/apply-wan-fast-native.mjs'
       - 'scripts/apply-wan-fast-generation.mjs'
       - 'scripts/apply-wan-fast-fallback.mjs'
+      - 'scripts/apply-wan-fast-ui.mjs'
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-wan-fast-build-contract.mjs'
@@ -91,6 +92,9 @@ jobs:
 
       - name: Apply Wan Fast fallback orchestration
         run: node scripts/apply-wan-fast-fallback.mjs
+
+      - name: Apply Wan Fast beta UI
+        run: node scripts/apply-wan-fast-ui.mjs
 
       - name: Install dependencies
         run: npm install
