@@ -11,18 +11,22 @@ on:
       - 'components/ChatHistoryModal.tsx'
       - 'components/HtmlPreview.tsx'
       - 'components/SetupWizard.tsx'
+      - 'engine/wan/**'
       - 'lib/quartz.ts'
       - 'lib/video-studio/**'
       - 'lib/wan-fast/**'
       - 'modules/saient-video-studio/**'
       - 'modules/saient-diffusion/**'
+      - 'plugins/quartz/**'
       - 'plugins/withTextToSpeechQueries.js'
+      - 'scripts/build-wan-android.sh'
       - 'scripts/apply-ptbr-localization.mjs'
       - 'scripts/apply-chat-ptbr-runtime.mjs'
       - 'scripts/apply-wan-performance.mjs'
       - 'scripts/apply-wan-startup-diagnostics.mjs'
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
+      - 'scripts/test-wan-fast-build-contract.mjs'
       - 'scripts/test-wan-fast-policy.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-wan-startup-diagnostics.mjs'
@@ -77,6 +81,9 @@ jobs:
 
       - name: Test Wan Fast policy contract
         run: npm run test:wan-fast-policy
+
+      - name: Test Wan Fast build/package contract
+        run: npm run test:wan-fast-build
 
       - name: Test existing Wan generation contract
         run: npm run test:wan
