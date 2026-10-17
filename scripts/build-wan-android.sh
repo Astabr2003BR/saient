@@ -8,7 +8,9 @@ readonly NDK_ROOT="${SAIENT_ANDROID_NDK:-/usr/lib/android-sdk/ndk/27.1.12297006}
 readonly BUILD_ROOT="$SOURCE_ROOT/build-android-vulkan"
 readonly VULKAN_HPP_ROOT="$BUILD_ROOT/host-vulkan-hpp"
 readonly OUTPUT="$PROJECT_ROOT/engine/arm64-v8a/libquartz-wan.so"
+readonly FAST_OUTPUT="$PROJECT_ROOT/engine/arm64-v8a/libquartz-wan-fast.so"
 readonly PATCH_FILE="$PROJECT_ROOT/engine/wan/saient-progress.patch"
+readonly SERVER_PATCH_FILE="$PROJECT_ROOT/engine/wan/saient-server-progress.patch"
 
 test -d "$SOURCE_ROOT/.git" || { echo "Missing stable-diffusion.cpp clone: $SOURCE_ROOT" >&2; exit 1; }
 test -f "$NDK_ROOT/build/cmake/android.toolchain.cmake" || { echo "Missing Android NDK: $NDK_ROOT" >&2; exit 1; }
@@ -19,8 +21,16 @@ test "$actual_commit" = "$EXPECTED_COMMIT" || {
   exit 1
 }
 
+# Keep the existing CLI/shared low-memory patch as the compatibility path.
 if ! rg -q 'SAIENT_WAN_PROGRESS' "$SOURCE_ROOT/examples/cli/main.cpp"; then
   git -C "$SOURCE_ROOT" apply "$PATCH_FILE"
+fi
+
+# The persistent server needs the same newline-delimited progress signal, but
+# its patch touches only examples/server/main.cpp so the shared ggml patch above
+# remains applied exactly once.
+if ! rg -q 'SAIENT_WAN_PROGRESS' "$SOURCE_ROOT/examples/server/main.cpp"; then
+  git -C "$SOURCE_ROOT" apply "$SERVER_PATCH_FILE"
 fi
 
 # The NDK ships Vulkan's C headers and loader but not the matching C++ wrapper
@@ -41,15 +51,22 @@ cmake -S "$SOURCE_ROOT" -B "$BUILD_ROOT" \
   -DGGML_OPENMP=OFF \
   -DSD_VULKAN=ON \
   -DSD_WEBP=ON \
-  -DSD_WEBM=ON
+  -DSD_WEBM=ON \
+  -DSD_SERVER_BUILD_FRONTEND=OFF
 
 cmake --build "$BUILD_ROOT" --target sd-cli --parallel "${SAIENT_BUILD_JOBS:-4}"
+cmake --build "$BUILD_ROOT" --target sd-server --parallel "${SAIENT_BUILD_JOBS:-4}"
+
 mkdir -p "$(dirname "$OUTPUT")"
 cp "$BUILD_ROOT/bin/sd-cli" "$OUTPUT"
-"$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" --strip-unneeded "$OUTPUT"
-chmod 0755 "$OUTPUT"
+cp "$BUILD_ROOT/bin/sd-server" "$FAST_OUTPUT"
 
-file "$OUTPUT"
-readelf -h "$OUTPUT" | rg 'Class:|Machine:|Type:'
-readelf -d "$OUTPUT" | rg 'NEEDED|SONAME' || true
-sha256sum "$OUTPUT"
+readonly STRIP="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+for artifact in "$OUTPUT" "$FAST_OUTPUT"; do
+  "$STRIP" --strip-unneeded "$artifact"
+  chmod 0755 "$artifact"
+  file "$artifact"
+  readelf -h "$artifact" | rg 'Class:|Machine:|Type:'
+  readelf -d "$artifact" | rg 'NEEDED|SONAME' || true
+  sha256sum "$artifact"
+done
