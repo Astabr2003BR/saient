@@ -1,0 +1,26 @@
+diff --git a/examples/server/main.cpp b/examples/server/main.cpp
+--- a/examples/server/main.cpp
++++ b/examples/server/main.cpp
+@@ -58,6 +58,14 @@ void sd_log_cb(enum sd_log_level_t level, const char* log, void* data) {
+     log_print(level, log, svr_params->verbose, svr_params->color);
+ }
+ 
++// Keep a newline-delimited progress signal for the Android process bridge. The
++// persistent server otherwise reports generation progress through terminal
++// rendering that BufferedReader cannot consume reliably while a job is active.
++static void saient_progress_callback(int step, int steps, float, void*) {
++    fprintf(stderr, "SAIENT_WAN_PROGRESS completed=%d total=%d\n", step, steps);
++    fflush(stderr);
++}
++
+ int main(int argc, const char** argv) {
+     if (argc > 1 && std::string(argv[1]) == "--version") {
+         std::cout << version_string() << "\n";
+@@ -70,6 +78,7 @@ int main(int argc, const char** argv) {
+     parse_args(argc, argv, svr_params, ctx_params, default_gen_params);
+ 
+     sd_set_log_callback(sd_log_cb, (void*)&svr_params);
++    sd_set_progress_callback(saient_progress_callback, nullptr);
+     log_verbose = svr_params.verbose;
+     log_color   = svr_params.color;
+ 
