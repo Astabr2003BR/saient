@@ -86,6 +86,21 @@ export type WanFastStatus = {
   lastError?: string;
 };
 
+export type WanGenerationTimings = {
+  engineStartMs: number;
+  timeToFirstProgressMs?: number;
+  generationMs: number;
+  totalMs: number;
+};
+
+export type WanFastVideoResult = VideoGenerationResult & {
+  engineMode: "fast";
+  startKind: "cold" | "warm";
+  engineSessionId: string;
+  generationCount: number;
+  timings: WanGenerationTimings;
+};
+
 type DiffusionEvents = {
   onProgress: (event: DiffusionProgress) => void;
   onVideoProgress: (event: VideoProgress) => void;
@@ -109,6 +124,8 @@ declare class SaientDiffusionModule extends NativeModule<DiffusionEvents> {
   getWanFastStatus(): Promise<WanFastStatus>;
   startWanFastEngine(): Promise<WanFastStatus>;
   stopWanFastEngine(): Promise<WanFastStatus>;
+  generateFastLocalVideo(options: VideoGenerationOptions): Promise<WanFastVideoResult>;
+  cancelFastLocalVideo(): Promise<boolean>;
 }
 
 export default requireOptionalNativeModule<SaientDiffusionModule>("SaientDiffusion");
