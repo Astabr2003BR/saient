@@ -347,7 +347,9 @@ export default function VideoScreen() {
   const downloadFraction = downloadProgress && downloadProgress.totalBytes > 0
     ? downloadProgress.completedBytes / downloadProgress.totalBytes
     : 0;
-  const generationFraction = progress && progress.total > 0 ? progress.completed / progress.total : 0;
+  const generationFraction = progress?.phase === "denoising" && progress.total > 0
+    ? progress.completed / progress.total
+    : 0;
   const studioPhase = studioProgress?.phase;
   const studioCancellable = studioPhase === "synthesizing" || studioPhase === "exporting";
   const busy = downloading || generating || postProcessing;
@@ -464,11 +466,17 @@ export default function VideoScreen() {
           {generating && (
             <View style={styles.progressCard}>
               <View style={styles.progressTop}>
-                <Text style={styles.progressLabel}>{progress ? `Processando ${progress.completed} de ${progress.total}` : "Carregando Wan"}</Text>
-                <Text style={styles.progressPct}>{Math.round(generationFraction * 100)}%</Text>
+                <Text style={styles.progressLabel}>{progress?.message ?? "Preparando Wan"}</Text>
+                <Text style={styles.progressPct}>
+                  {progress?.phase === "denoising" ? `${Math.round(generationFraction * 100)}%` : "…"}
+                </Text>
               </View>
               <View style={styles.track}><View style={[styles.fill, { width: `${Math.round(generationFraction * 100)}%` }]} /></View>
-              <Text style={styles.progressHint}>O chat fica descarregado da memória até o processo nativo de vídeo terminar.</Text>
+              {progress?.detail ? (
+                <Text style={styles.progressHint} numberOfLines={2}>Diagnóstico: {progress.detail}</Text>
+              ) : (
+                <Text style={styles.progressHint}>O app agora mostra em qual etapa o Wan está antes do primeiro passo de difusão.</Text>
+              )}
             </View>
           )}
 

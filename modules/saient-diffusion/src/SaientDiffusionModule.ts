@@ -40,6 +40,9 @@ export type DiffusionGenerationResult = {
 };
 
 export type VideoProgress = {
+  phase: "preparing" | "starting" | "loading" | "denoising";
+  message: string;
+  detail?: string;
   completed: number;
   total: number;
 };

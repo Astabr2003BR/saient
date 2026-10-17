@@ -620,6 +620,25 @@ class SaientDiffusionModule : Module() {
     )
   }
 
+  private fun sendVideoProgress(
+    phase: String,
+    message: String,
+    completed: Int,
+    total: Int,
+    detail: String? = null,
+  ) {
+    sendEvent(
+      "onVideoProgress",
+      mapOf(
+        "phase" to phase,
+        "message" to message,
+        "detail" to (detail ?: ""),
+        "completed" to completed.coerceIn(0, total),
+        "total" to total,
+      ),
+    )
+  }
+
   private fun sha256(file: File): String {
     val digest = MessageDigest.getInstance("SHA-256")
     file.inputStream().buffered(1024 * 1024).use { input ->
@@ -991,6 +1010,7 @@ class SaientDiffusionModule : Module() {
     val started = System.nanoTime()
     val logs = ArrayDeque<String>()
     try {
+      sendVideoProgress("preparing", "Liberando memória para o Wan", 0, options.steps)
       if (!wasPaused) {
         pausedMarker.parentFile?.mkdirs()
         pausedMarker.writeText("1")
@@ -999,24 +1019,31 @@ class SaientDiffusionModule : Module() {
         }
       }
       if (cancellationRequested) throw DiffusionException("Video generation cancelled.")
+      sendVideoProgress("starting", "Iniciando motor Wan", 0, options.steps)
       val process = ProcessBuilder(arguments).redirectErrorStream(true).start()
       synchronized(processLock) {
         activeProcess = process
         if (cancellationRequested) process.destroy()
       }
+      sendVideoProgress("loading", "Carregando modelos e preparando Vulkan", 0, options.steps)
       val progress = Regex("SAIENT_WAN_PROGRESS completed=(\\d+) total=(\\d+)")
+      var denoisingStarted = false
       process.inputStream.bufferedReader().useLines { lines ->
         lines.forEach { line ->
           if (logs.size >= 120) logs.removeFirst()
           logs.addLast(line.take(1_000))
           val match = progress.matchEntire(line.trim())
           if (match != null && match.groupValues[2].toInt() == options.steps) {
-            sendEvent(
-              "onVideoProgress",
-              mapOf(
-                "completed" to match.groupValues[1].toInt(),
-                "total" to options.steps,
-              ),
+            val completed = match.groupValues[1].toInt()
+            denoisingStarted = true
+            sendVideoProgress("denoising", "Processando $completed de ${options.steps}", completed, options.steps)
+          } else if (!denoisingStarted && line.isNotBlank()) {
+            sendVideoProgress(
+              "loading",
+              "Carregando modelos e preparando Vulkan",
+              0,
+              options.steps,
+              line.take(240),
             )
           }
         }
