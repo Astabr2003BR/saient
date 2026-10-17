@@ -15,6 +15,7 @@
     "test:wan": "node scripts/test-wan-contract.mjs",
     "test:wan-performance": "node scripts/test-wan-performance-contract.mjs",
     "test:wan-startup-diagnostics": "node scripts/test-wan-startup-diagnostics.mjs",
+    "test:wan-fast-policy": "node --no-warnings --experimental-strip-types scripts/test-wan-fast-policy.mjs",
     "test:video-studio": "node --no-warnings --experimental-strip-types scripts/test-video-studio.mjs",
     "test:video-studio-native": "node scripts/test-video-studio-native-contract.mjs",
     "test:video-studio-export": "node scripts/test-video-studio-export-contract.mjs",
