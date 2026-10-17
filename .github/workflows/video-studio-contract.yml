@@ -24,6 +24,7 @@ on:
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-wan-startup-diagnostics.mjs'
+      - 'scripts/test-wan-startup-apply-idempotence.mjs'
       - 'scripts/test-video-studio.mjs'
       - 'scripts/test-video-studio-native-contract.mjs'
       - 'scripts/test-video-studio-export-contract.mjs'
@@ -54,6 +55,9 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+
+      - name: Test Wan startup diagnostics apply idempotence
+        run: node scripts/test-wan-startup-apply-idempotence.mjs
 
       - name: Apply deterministic PT-BR localization
         run: |
