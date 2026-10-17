@@ -8,6 +8,7 @@ on:
       - 'app/(tabs)/video.tsx'
       - 'lib/video-studio/**'
       - 'modules/saient-video-studio/**'
+      - 'modules/saient-diffusion/**'
       - 'plugins/withTextToSpeechQueries.js'
       - 'app.json'
       - 'package.json'
