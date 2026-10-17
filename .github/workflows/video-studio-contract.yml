@@ -13,6 +13,7 @@ on:
       - 'components/SetupWizard.tsx'
       - 'lib/quartz.ts'
       - 'lib/video-studio/**'
+      - 'lib/wan-fast/**'
       - 'modules/saient-video-studio/**'
       - 'modules/saient-diffusion/**'
       - 'plugins/withTextToSpeechQueries.js'
@@ -22,6 +23,7 @@ on:
       - 'scripts/apply-wan-startup-diagnostics.mjs'
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
+      - 'scripts/test-wan-fast-policy.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-wan-startup-diagnostics.mjs'
       - 'scripts/test-wan-startup-apply-idempotence.mjs'
@@ -72,6 +74,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Test Wan Fast policy contract
+        run: npm run test:wan-fast-policy
 
       - name: Test existing Wan generation contract
         run: npm run test:wan
