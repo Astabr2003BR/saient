@@ -1,3 +1,4 @@
+# Triggered after deterministic runtime materialization to verify the corrected Kotlin source.
 name: Video Studio Final Gates
 
 on:
