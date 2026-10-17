@@ -33,8 +33,8 @@ assert.match(manager, /supported_modes/,
   "Fast Manager readiness must inspect supported_modes");
 assert.match(manager, /vid_gen/,
   "Fast Manager must require video-generation capability");
-assert.match(manager, /process\.isAlive/,
-  "Fast Manager must re-check process liveness instead of caching stale ready state");
+assert.match(manager, /process\?\.isAlive/,
+  "Fast Manager must re-check nullable process liveness instead of caching stale ready state");
 assert.match(manager, /--listen-ip[\s\S]*WAN_FAST_HOST/,
   "server launch must explicitly bind to the pinned runtime's fixed loopback listen address");
 assert.match(manager, /--listen-port[\s\S]*WAN_FAST_PORT/,
