@@ -37,6 +37,7 @@ on:
       - 'scripts/test-wan-fast-fallback-contract.mjs'
       - 'scripts/test-wan-fast-ui-contract.mjs'
       - 'scripts/test-wan-fast-policy.mjs'
+      - 'scripts/test-wan-fast-final-gates-contract.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-wan-startup-diagnostics.mjs'
       - 'scripts/test-wan-startup-apply-idempotence.mjs'
@@ -51,6 +52,7 @@ on:
       - 'app.json'
       - 'package.json'
       - '.github/workflows/video-studio-contract.yml'
+      - '.github/workflows/video-studio-final-gates.yml'
   workflow_dispatch:
 
 permissions:
@@ -120,6 +122,9 @@ jobs:
 
       - name: Test Wan Fast UI contract
         run: npm run test:wan-fast-ui
+
+      - name: Test Wan Fast final gates contract
+        run: npm run test:wan-fast-final-gates
 
       - name: Test existing Wan generation contract
         run: npm run test:wan
