@@ -33,6 +33,7 @@ on:
       - 'scripts/test-wan-fast-native-contract.mjs'
       - 'scripts/test-wan-fast-generation-contract.mjs'
       - 'scripts/test-wan-fast-fallback-contract.mjs'
+      - 'scripts/test-wan-fast-ui-contract.mjs'
       - 'scripts/test-wan-fast-policy.mjs'
       - 'scripts/test-wan-performance-contract.mjs'
       - 'scripts/test-wan-startup-diagnostics.mjs'
@@ -108,6 +109,9 @@ jobs:
 
       - name: Test Wan Fast fallback contract
         run: npm run test:wan-fast-fallback
+
+      - name: Test Wan Fast UI contract
+        run: npm run test:wan-fast-ui
 
       - name: Test existing Wan generation contract
         run: npm run test:wan

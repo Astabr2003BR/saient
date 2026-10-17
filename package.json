@@ -20,6 +20,7 @@
     "test:wan-fast-native": "node scripts/test-wan-fast-native-contract.mjs",
     "test:wan-fast-generation": "node scripts/test-wan-fast-generation-contract.mjs",
     "test:wan-fast-fallback": "node scripts/test-wan-fast-fallback-contract.mjs",
+    "test:wan-fast-ui": "node scripts/test-wan-fast-ui-contract.mjs",
     "test:video-studio": "node --no-warnings --experimental-strip-types scripts/test-video-studio.mjs",
     "test:video-studio-native": "node scripts/test-video-studio-native-contract.mjs",
     "test:video-studio-export": "node scripts/test-video-studio-export-contract.mjs",
