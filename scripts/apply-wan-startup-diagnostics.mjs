@@ -56,12 +56,17 @@ video = replaceOnce(
   "Wan loading stage",
 );
 
-video = replaceOnce(
-  video,
-  `          val match = progress.matchEntire(line.trim())\n          if (match != null && match.groupValues[2].toInt() == options.steps) {\n            sendEvent(\n              "onVideoProgress",\n              mapOf(\n                "completed" to match.groupValues[1].toInt(),\n                "total" to options.steps,\n              ),\n            )\n          }`,
-  `          val match = progress.matchEntire(line.trim())\n          if (match != null && match.groupValues[2].toInt() == options.steps) {\n            val completed = match.groupValues[1].toInt()\n            denoisingStarted = true\n            sendVideoProgress("denoising", "Processando $completed de \${options.steps}", completed, options.steps)\n          } else if (!denoisingStarted && line.isNotBlank()) {\n            sendVideoProgress(\n              "loading",\n              "Carregando modelos e preparando Vulkan",\n              0,\n              options.steps,\n              line.take(240),\n            )\n          }`,
-  "Wan native log diagnostics",
-);
+const nativeProgressBefore = `          val match = progress.matchEntire(line.trim())\n          if (match != null && match.groupValues[2].toInt() == options.steps) {\n            sendEvent(\n              "onVideoProgress",\n              mapOf(\n                "completed" to match.groupValues[1].toInt(),\n                "total" to options.steps,\n              ),\n            )\n          }`;
+const nativeProgressLegacy = `          val match = progress.matchEntire(line.trim())\n          if (match != null && match.groupValues[2].toInt() == options.steps) {\n            val completed = match.groupValues[1].toInt()\n            denoisingStarted = true\n            sendVideoProgress("denoising", "Processando $completed de \${options.steps}", completed, options.steps)\n          } else if (!denoisingStarted && line.isNotBlank()) {\n            sendVideoProgress(\n              "loading",\n              "Carregando modelos e preparando Vulkan",\n              0,\n              options.steps,\n              line.take(240),\n            )\n          }`;
+const nativeProgressCurrent = `          val match = progress.find(line)\n          if (match != null) {\n            val completed = match.groupValues[1].toInt()\n            val total = match.groupValues[2].toInt()\n            if (total > 0) {\n              denoisingStarted = true\n              sendVideoProgress("denoising", "Processando $completed de $total", completed, total)\n            }\n          } else if (!denoisingStarted && line.isNotBlank()) {\n            sendVideoProgress(\n              "loading",\n              "Carregando modelos e preparando Vulkan",\n              0,\n              options.steps,\n              line.take(240),\n            )\n          }`;
+
+if (!video.includes(nativeProgressCurrent)) {
+  if (video.includes(nativeProgressLegacy)) {
+    video = video.replace(nativeProgressLegacy, nativeProgressCurrent);
+  } else {
+    video = replaceOnce(video, nativeProgressBefore, nativeProgressCurrent, "Wan native log diagnostics");
+  }
+}
 
 native = native.slice(0, videoStart) + video + native.slice(videoEnd);
 fs.writeFileSync(nativePath, native);
