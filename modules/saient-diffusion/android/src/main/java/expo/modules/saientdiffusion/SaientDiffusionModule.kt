@@ -232,15 +232,19 @@ class SaientDiffusionModule : Module() {
     }
 
     AsyncFunction("generateFastLocalVideo") Coroutine { options: VideoGenerationOptions ->
-      withContext(Dispatchers.IO) {
-        wanFastManager.generate(options) { completed, total, detail ->
-          sendVideoProgress("denoising", "Processando $completed de $total", completed, total, detail)
-        }
-      }
+      withContext(Dispatchers.IO) { generateFastVideo(options) }
     }
 
     AsyncFunction("cancelFastLocalVideo") Coroutine { ->
       withContext(Dispatchers.IO) { wanFastManager.cancelGeneration() }
+    }
+
+    AsyncFunction("generateSmartLocalVideo") Coroutine { options: VideoGenerationOptions ->
+      withContext(Dispatchers.IO) { generateSmartVideo(options) }
+    }
+
+    AsyncFunction("cancelSmartLocalVideo") Coroutine { ->
+      withContext(Dispatchers.IO) { cancelSmartVideo() }
     }
 
     AsyncFunction("generateVideo") Coroutine { options: VideoGenerationOptions ->
@@ -984,7 +988,118 @@ class SaientDiffusionModule : Module() {
     }
   }
 
+  private fun reserveWanGeneration() {
+    synchronized(processLock) {
+      if (modelTransferReserved) throw DiffusionException("Wait for the model transfer to finish.")
+      if (generationReserved || activeProcess?.isAlive == true) {
+        throw DiffusionException("Another local generation is already running.")
+      }
+      generationReserved = true
+      cancellationRequested = false
+    }
+  }
+
+  private fun releaseWanGeneration() {
+    synchronized(processLock) {
+      cancellationRequested = false
+      generationReserved = false
+    }
+  }
+
+  private fun generateFastVideo(options: VideoGenerationOptions): Map<String, Any?> {
+    reserveWanGeneration()
+    return try {
+      generateFastVideoReserved(options)
+    } finally {
+      releaseWanGeneration()
+    }
+  }
+
+  private fun generateFastVideoReserved(options: VideoGenerationOptions): Map<String, Any?> =
+    wanFastManager.generate(options) { completed, total, detail ->
+      sendVideoProgress("denoising", "Processando $completed de $total", completed, total, detail)
+    }
+
+  private fun generateSmartVideo(options: VideoGenerationOptions): Map<String, Any?> {
+    reserveWanGeneration()
+    val requestStartedNs = System.nanoTime()
+    val fastWasWarm = wanFastManager.status()["state"] == "ready"
+    return try {
+      try {
+        wanFastManager.generate(options) { completed, total, detail ->
+          sendVideoProgress("denoising", "Processando $completed de $total", completed, total, detail)
+        }
+      } catch (error: Exception) {
+        if (cancellationRequested || error.message?.contains("cancelled", ignoreCase = true) == true) {
+          throw DiffusionException("Video generation cancelled.", error)
+        }
+        val fallbackReason = error.message
+          ?.replace(Regex("\s+"), " ")
+          ?.trim()
+          ?.take(240)
+          ?.ifBlank { null }
+          ?: "Wan Fast Engine failed."
+
+        wanChatPauseCoordinatorLazy.value.acquire()
+        try {
+          wanFastManager.stop()
+          if (cancellationRequested) throw DiffusionException("Video generation cancelled.", error)
+          val fallbackStartedNs = System.nanoTime()
+          val fallback = generateVideoReserved(options).toMutableMap()
+          val finishedNs = System.nanoTime()
+          val generationMs = ((finishedNs - fallbackStartedNs) / 1_000_000L).coerceAtLeast(0L)
+          val totalMs = ((finishedNs - requestStartedNs) / 1_000_000L).coerceAtLeast(0L)
+          val fastAttemptMs = ((fallbackStartedNs - requestStartedNs) / 1_000_000L).coerceAtLeast(0L)
+          fallback["engineMode"] = "cli-fallback"
+          fallback["startKind"] = if (fastWasWarm) "warm" else "cold"
+          fallback["fallbackReason"] = fallbackReason
+          fallback["timings"] = mapOf(
+            "engineStartMs" to fastAttemptMs,
+            "generationMs" to generationMs,
+            "totalMs" to totalMs,
+          )
+          fallback
+        } finally {
+          wanChatPauseCoordinatorLazy.value.release()
+        }
+      }
+    } finally {
+      releaseWanGeneration()
+    }
+  }
+
+  private fun cancelSmartVideo(): Boolean {
+    val cliProcess: Process?
+    synchronized(processLock) {
+      if (!generationReserved && activeProcess?.isAlive != true) return false
+      cancellationRequested = true
+      cliProcess = activeProcess
+    }
+
+    val fastCancelled = wanFastManager.cancelGeneration()
+    if (!fastCancelled) {
+      val fastState = wanFastManager.status()["state"] as? String
+      if (fastState == "starting" || fastState == "loading" || fastState == "generating") {
+        wanFastManager.stop()
+      }
+    }
+    if (cliProcess?.isAlive == true) {
+      cliProcess.destroy()
+      if (!cliProcess.waitFor(2, TimeUnit.SECONDS)) cliProcess.destroyForcibly()
+    }
+    return true
+  }
+
   private fun generateVideo(options: VideoGenerationOptions): Map<String, Any> {
+    reserveWanGeneration()
+    return try {
+      generateVideoReserved(options)
+    } finally {
+      releaseWanGeneration()
+    }
+  }
+
+  private fun generateVideoReserved(options: VideoGenerationOptions): Map<String, Any> {
     if (videoInactiveMarker().exists()) {
       throw DiffusionException("The Wan video model is inactive. Activate it before generating.")
     }
@@ -1011,15 +1126,6 @@ class SaientDiffusionModule : Module() {
     val root = videoModelRoot()
     val inspection = inspectVideoPack(root)
     if (!inspection.first) throw DiffusionException(inspection.second)
-
-    synchronized(processLock) {
-      if (modelTransferReserved) throw DiffusionException("Wait for the model transfer to finish.")
-      if (generationReserved || activeProcess?.isAlive == true) {
-        throw DiffusionException("Another local generation is already running.")
-      }
-      generationReserved = true
-      cancellationRequested = false
-    }
 
     val pausedMarker = File(context().filesDir, "models/.paused")
     val wasPaused = pausedMarker.exists()
@@ -1129,8 +1235,6 @@ class SaientDiffusionModule : Module() {
     } finally {
       synchronized(processLock) {
         activeProcess = null
-        cancellationRequested = false
-        generationReserved = false
       }
       if (!wasPaused) pausedMarker.delete()
     }

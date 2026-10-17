@@ -101,6 +101,15 @@ export type WanFastVideoResult = VideoGenerationResult & {
   timings: WanGenerationTimings;
 };
 
+export type WanSmartVideoResult = VideoGenerationResult & {
+  engineMode: "fast" | "cli-fallback";
+  startKind: "cold" | "warm";
+  engineSessionId?: string;
+  generationCount?: number;
+  fallbackReason?: string;
+  timings: WanGenerationTimings;
+};
+
 type DiffusionEvents = {
   onProgress: (event: DiffusionProgress) => void;
   onVideoProgress: (event: VideoProgress) => void;
@@ -126,6 +135,8 @@ declare class SaientDiffusionModule extends NativeModule<DiffusionEvents> {
   stopWanFastEngine(): Promise<WanFastStatus>;
   generateFastLocalVideo(options: VideoGenerationOptions): Promise<WanFastVideoResult>;
   cancelFastLocalVideo(): Promise<boolean>;
+  generateSmartLocalVideo(options: VideoGenerationOptions): Promise<WanSmartVideoResult>;
+  cancelSmartLocalVideo(): Promise<boolean>;
 }
 
 export default requireOptionalNativeModule<SaientDiffusionModule>("SaientDiffusion");
