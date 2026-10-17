@@ -77,7 +77,6 @@ private val REMOTE_MODEL_FILES = listOf(
   RemoteModelFile("vae/config.json", modelFile("vae/config.json"), 631, "f18b16fa4381c90ab44a3d7abd2e90afd05a2c31b8ca69998bc93c6453aeb7b7"),
   RemoteModelFile("vae/diffusion_pytorch_model.fp16.safetensors", modelFile("vae/diffusion_pytorch_model.fp16.safetensors"), 167_335_310, "216de6908bf4a9d16fdbef9e57c405c7e01e97fe5a5188dba3c3a5c306797fc0"),
 )
-
 private val REMOTE_MODEL_BYTES = REMOTE_MODEL_FILES.sumOf { it.bytes }
 
 private fun wanModelFile(path: String) = "https://$MODEL_HOST/models/$WAN_PACK_ID/$path"
@@ -1032,11 +1031,14 @@ class SaientDiffusionModule : Module() {
         lines.forEach { line ->
           if (logs.size >= 120) logs.removeFirst()
           logs.addLast(line.take(1_000))
-          val match = progress.matchEntire(line.trim())
-          if (match != null && match.groupValues[2].toInt() == options.steps) {
+          val match = progress.find(line)
+          if (match != null) {
             val completed = match.groupValues[1].toInt()
-            denoisingStarted = true
-            sendVideoProgress("denoising", "Processando $completed de ${options.steps}", completed, options.steps)
+            val total = match.groupValues[2].toInt()
+            if (total > 0) {
+              denoisingStarted = true
+              sendVideoProgress("denoising", "Processando $completed de $total", completed, total)
+            }
           } else if (!denoisingStarted && line.isNotBlank()) {
             sendVideoProgress(
               "loading",
