@@ -18,6 +18,7 @@
     "test:wan-fast-policy": "node --no-warnings --experimental-strip-types scripts/test-wan-fast-policy.mjs",
     "test:wan-fast-build": "node scripts/test-wan-fast-build-contract.mjs",
     "test:wan-fast-native": "node scripts/test-wan-fast-native-contract.mjs",
+    "test:wan-fast-generation": "node scripts/test-wan-fast-generation-contract.mjs",
     "test:video-studio": "node --no-warnings --experimental-strip-types scripts/test-video-studio.mjs",
     "test:video-studio-native": "node scripts/test-video-studio-native-contract.mjs",
     "test:video-studio-export": "node scripts/test-video-studio-export-contract.mjs",
