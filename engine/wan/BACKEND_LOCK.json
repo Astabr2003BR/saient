@@ -16,7 +16,9 @@
   },
   "fastArtifact": {
     "path": "../arm64-v8a/libquartz-wan-fast.so",
-    "target": "sd-server"
+    "target": "sd-server",
+    "bytes": 82948008,
+    "sha256": "ee331c5b5696682d7ff61b7a47a05cbfefc6781b22c5ade10d45832a3fe89f22"
   },
   "localPatchNotes": "newline-delimited progress for CLI and persistent server Android bridges; CPU graph-cut segmented compute; free params-backend tensors after each graph; K-quant token embeddings via get_rows (avoids materialising the UMT5-XXL embedding matrix, -2.45GB peak RSS)"
 }
