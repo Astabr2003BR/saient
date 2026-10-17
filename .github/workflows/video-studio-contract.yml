@@ -24,6 +24,7 @@ on:
       - 'scripts/apply-chat-ptbr-runtime.mjs'
       - 'scripts/apply-wan-performance.mjs'
       - 'scripts/apply-wan-startup-diagnostics.mjs'
+      - 'scripts/apply-wan-fast-native.mjs'
       - 'scripts/test-chat-ptbr-contract.mjs'
       - 'scripts/test-wan-contract.mjs'
       - 'scripts/test-wan-fast-build-contract.mjs'
@@ -76,6 +77,9 @@ jobs:
 
       - name: Apply Wan startup diagnostics
         run: node scripts/apply-wan-startup-diagnostics.mjs
+
+      - name: Apply Wan Fast native lifecycle bridge
+        run: node scripts/apply-wan-fast-native.mjs
 
       - name: Install dependencies
         run: npm install
