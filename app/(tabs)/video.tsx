@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/lib/theme";
+import { resolveWanProfile } from "@/lib/wan-fast/policy";
 import {
   runVideoStudioPostProcess,
   type VideoStudioPipelinePhase,
@@ -17,16 +18,22 @@ import {
   addVideoProgressListener,
   cancelDiffusionModelDownload,
   cancelLocalVideo,
+  cancelSmartLocalVideo,
   diffusionAvailable,
   downloadVideoModel,
   generateLocalVideo,
+  generateSmartLocalVideo,
   getVideoStatus,
+  getWanFastStatus,
+  startWanFastEngine,
   removeVideoModel,
   setVideoModelActive,
   type DiffusionDownloadProgress,
   type DiffusionStatus,
   type VideoGenerationResult,
   type VideoProgress,
+  type WanFastStatus,
+  type WanSmartVideoResult,
 } from "@/modules/saient-diffusion";
 import {
   cancelSpeechSynthesis,
@@ -54,6 +61,10 @@ const FRAME_PRESETS = [
   { value: 41, label: "5 s" },
 ];
 
+const FAST_PROFILE = resolveWanProfile("fast");
+const BALANCED_PROFILE = resolveWanProfile("balanced");
+const QUALITY_PROFILE = resolveWanProfile("quality");
+
 const SPEECH_RATE_PRESETS = [
   { value: 0.9, label: "Calma" },
   { value: 1, label: "Normal" },
@@ -77,6 +88,18 @@ function phaseLabel(phase: VideoStudioPipelinePhase | undefined) {
   }
 }
 
+function fastStateLabel(status: WanFastStatus | null) {
+  switch (status?.state) {
+    case "starting": return "Inicializando motor";
+    case "loading": return "Carregando modelos";
+    case "ready": return "Pronto";
+    case "generating": return "Gerando";
+    case "stopping": return "Finalizando";
+    case "failed": return "Falha no motor rápido";
+    default: return "Desligado";
+  }
+}
+
 function statusLabel(checking: boolean, status: DiffusionStatus | null) {
   if (checking) return "Verificando";
   if (status?.active) return "Pronto";
@@ -93,11 +116,12 @@ function statusMessage(status: DiffusionStatus | null, downloading: boolean) {
   return "Baixe o pacote de vídeo Wan2.1 para começar.";
 }
 
-function GeneratedVideo({ result }: { result: VideoGenerationResult }) {
+function GeneratedVideo({ result }: { result: VideoGenerationResult | WanSmartVideoResult }) {
   const player = useVideoPlayer(result.uri, (instance) => {
     instance.loop = true;
     instance.play();
   });
+  const smartResult = "engineMode" in result ? result as WanSmartVideoResult : null;
   return (
     <View style={styles.resultCard}>
       <VideoView
@@ -113,6 +137,22 @@ function GeneratedVideo({ result }: { result: VideoGenerationResult }) {
           {result.frames} quadros · {result.steps} passos · {result.elapsedSeconds.toFixed(1)} s
         </Text>
       </View>
+      {smartResult && (
+        <View style={styles.fastResultMeta}>
+          <Text style={styles.fastResultText}>
+            Motor: {smartResult.engineMode === "fast" ? "Rápido" : "CLI fallback"} · {smartResult.startKind === "warm" ? "quente" : "frio"} · {(smartResult.timings.totalMs / 1000).toFixed(1)} s
+          </Text>
+          {smartResult.timings.timeToFirstProgressMs != null && (
+            <Text style={styles.fastResultText}>Primeiro progresso: {(smartResult.timings.timeToFirstProgressMs / 1000).toFixed(1)} s</Text>
+          )}
+          {smartResult.engineSessionId && (
+            <Text style={styles.fastResultText}>Sessão {smartResult.engineSessionId.slice(0, 8)} · geração {smartResult.generationCount ?? 1}</Text>
+          )}
+          {smartResult.fallbackReason && (
+            <Text style={styles.fastFallbackText}>Fallback CLI: {smartResult.fallbackReason}</Text>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -155,7 +195,9 @@ export default function VideoScreen() {
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 2_147_483_647));
   const [progress, setProgress] = useState<VideoProgress | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<DiffusionDownloadProgress | null>(null);
-  const [result, setResult] = useState<VideoGenerationResult | null>(null);
+  const [result, setResult] = useState<VideoGenerationResult | WanSmartVideoResult | null>(null);
+  const [fastEngineEnabled, setFastEngineEnabled] = useState(false);
+  const [fastStatus, setFastStatus] = useState<WanFastStatus | null>(null);
 
   const [narration, setNarration] = useState("");
   const [voices, setVoices] = useState<OfflineVoice[]>([]);
@@ -208,7 +250,14 @@ export default function VideoScreen() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    void refresh();
+    if (fastEngineEnabled && status?.active) {
+      void startWanFastEngine().then(setFastStatus).catch(() => {
+        void getWanFastStatus().then(setFastStatus).catch(() => undefined);
+      });
+    }
+  }, [fastEngineEnabled, refresh, status?.active]));
 
   useEffect(() => {
     if (!result?.uri || !videoStudioAvailable()) return;
@@ -259,23 +308,33 @@ export default function VideoScreen() {
     setFinalVideo(null);
     setStudioProgress(null);
     try {
-      setResult(await generateLocalVideo({
+      const generateVideoRequest = fastEngineEnabled ? generateSmartLocalVideo : generateLocalVideo;
+      if (fastEngineEnabled) {
+        setFastStatus((current) => current
+          ? { ...current, state: "generating", message: "Gerando" }
+          : { state: "generating", available: true, healthy: true, generationCount: 0, message: "Gerando" });
+      }
+      const generated = await generateVideoRequest({
         prompt: prompt.trim(),
         negativePrompt: negativePrompt.trim(),
         steps,
         guidance: 6,
         seed,
         frames,
-      }));
+      });
+      setResult(generated);
     } catch (error) {
       if (!String(error).toLocaleLowerCase().includes("cancel")) {
         Alert.alert("Falha na geração do vídeo", String(error));
       }
     } finally {
+      if (fastEngineEnabled) {
+        void getWanFastStatus().then(setFastStatus).catch(() => undefined);
+      }
       setGenerating(false);
       setCancelling(false);
     }
-  }, [frames, negativePrompt, prompt, seed, status?.active, status?.valid, steps]);
+  }, [fastEngineEnabled, frames, negativePrompt, prompt, seed, status?.active, status?.valid, steps]);
 
   const dubAndExport = useCallback(async () => {
     if (!result) return;
@@ -430,6 +489,48 @@ export default function VideoScreen() {
             </Pressable>
           </View>
 
+          <View style={styles.fastCard}>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleTitle}>Motor rápido (teste)</Text>
+                <Text style={styles.toggleSub}>Mantém Vulkan e os modelos carregados enquanto o app está em primeiro plano.</Text>
+                <Text style={styles.fastState}>Estado: {fastStateLabel(fastStatus)}</Text>
+              </View>
+              <Switch
+                value={fastEngineEnabled}
+                onValueChange={setFastEngineEnabled}
+                disabled={busy || !status.active}
+              />
+            </View>
+            <Text style={styles.label}>Perfil do vídeo</Text>
+            <View style={styles.presets}>
+              <Pressable
+                style={[styles.preset, steps === FAST_PROFILE.steps && frames === FAST_PROFILE.frames && styles.presetOn]}
+                onPress={() => { setSteps(FAST_PROFILE.steps); setFrames(FAST_PROFILE.frames); }}
+                disabled={busy}
+              >
+                <Text style={styles.presetLabel}>Rápido</Text>
+                <Text style={styles.presetMeta}>{FAST_PROFILE.steps} passos · {FAST_PROFILE.frames} q</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.preset, steps === BALANCED_PROFILE.steps && frames === BALANCED_PROFILE.frames && styles.presetOn]}
+                onPress={() => { setSteps(BALANCED_PROFILE.steps); setFrames(BALANCED_PROFILE.frames); }}
+                disabled={busy}
+              >
+                <Text style={styles.presetLabel}>Equilibrado</Text>
+                <Text style={styles.presetMeta}>{BALANCED_PROFILE.steps} passos · {BALANCED_PROFILE.frames} q</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.preset, steps === QUALITY_PROFILE.steps && frames === QUALITY_PROFILE.frames && styles.presetOn]}
+                onPress={() => { setSteps(QUALITY_PROFILE.steps); setFrames(QUALITY_PROFILE.frames); }}
+                disabled={busy}
+              >
+                <Text style={styles.presetLabel}>Qualidade</Text>
+                <Text style={styles.presetMeta}>{QUALITY_PROFILE.steps} passos · {QUALITY_PROFILE.frames} q</Text>
+              </Pressable>
+            </View>
+          </View>
+
           <Text style={styles.label}>Descrição do movimento</Text>
           <TextInput style={styles.prompt} value={prompt} onChangeText={setPrompt} editable={!busy} multiline maxLength={1000} placeholder="Uma raposa vermelha vira para a câmera enquanto a neve cai…" placeholderTextColor={C.text3} />
           <Text style={styles.label}>Evitar (opcional)</Text>
@@ -486,7 +587,11 @@ export default function VideoScreen() {
             <Pressable
               style={[styles.cancelButton, cancelling && styles.disabled]}
               disabled={cancelling}
-              onPress={() => { setCancelling(true); void cancelLocalVideo().finally(() => setCancelling(false)); }}
+              onPress={() => {
+                setCancelling(true);
+                const cancelVideoRequest = fastEngineEnabled ? cancelSmartLocalVideo : cancelLocalVideo;
+                void cancelVideoRequest().finally(() => setCancelling(false));
+              }}
             >
               <Ionicons name="stop-circle-outline" size={19} color={C.red} /><Text style={styles.dangerText}>{cancelling ? "Parando…" : "Cancelar geração"}</Text>
             </Pressable>
@@ -643,6 +748,8 @@ const styles = StyleSheet.create({
   modelCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.bg2, borderWidth: 1, borderColor: C.green, borderRadius: 12, padding: 14, marginBottom: 18 },
   modelName: { color: C.text, fontSize: 14, fontWeight: "700" },
   modelMeta: { color: C.text3, fontSize: 11, marginTop: 3 },
+  fastCard: { marginBottom: 6, padding: 12, borderRadius: 12, backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border },
+  fastState: { color: C.accent, fontSize: 10, fontWeight: "700", marginTop: 4 },
   label: { color: C.text2, fontSize: 12, fontWeight: "700", marginBottom: 7, marginTop: 12 },
   prompt: { minHeight: 104, color: C.text, backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 13, fontSize: 14, textAlignVertical: "top" },
   negative: { height: 48, color: C.text, backgroundColor: C.bg2, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 13, fontSize: 13 },
@@ -668,6 +775,9 @@ const styles = StyleSheet.create({
   video: { width: "100%", aspectRatio: 416 / 240, backgroundColor: C.bg3 },
   resultBottom: { flexDirection: "row", alignItems: "center", gap: 7, padding: 12 },
   resultMeta: { color: C.text2, fontSize: 11, flex: 1 },
+  fastResultMeta: { paddingHorizontal: 12, paddingBottom: 12, gap: 3 },
+  fastResultText: { color: C.text3, fontSize: 10, lineHeight: 14 },
+  fastFallbackText: { color: C.amber, fontSize: 10, lineHeight: 14 },
   generateButton: { minHeight: 52, marginTop: 18, borderRadius: 13, backgroundColor: C.accent, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   generateText: { color: C.bg, fontSize: 15, fontWeight: "800" },
   cancelButton: { minHeight: 50, marginTop: 18, borderRadius: 13, borderWidth: 1, borderColor: C.red, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
